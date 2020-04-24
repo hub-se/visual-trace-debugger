@@ -1,0 +1,28 @@
+<idea-plugin>
+    <id>se.de.hu_berlin.informatik.visual-trace-debugger</id>
+    <name>Visual Trace Debugger</name>
+    <vendor email="heiden@informatik.hu-berlin.de"
+            url="https://www.informatik.hu-berlin.de/de/forschung/gebiete/se">HU-Berlin
+    </vendor>
+
+    <description>Visual debugging aid that allows the user to navigate within visual
+        representations of execution traces.
+    </description>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+        <action id="PopupDialogAction" class="PopupDialogAction" text="My Debugging Plugin: Pop Dialog Action"
+                description="Some description!" icon="VisualTraceDebuggerIcons.VISUAL_TRACE">
+            <override-text place="MainMenu" text="Pop Dialog Action"/>
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+    </actions>
+</idea-plugin>

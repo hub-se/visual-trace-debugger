@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns="http://www.w3.org/2000/svg">
+    <desc>Created with Lunacy</desc>
+    <defs>
+        <path d="M0 7L2.00002 3.00001L4.00003 8L6.00007 0L7.00007 5L8.00007 2.00001L9.00014 6L10.0001 3.00001L12 7L10.0001 5L9.00014 8L8.00007 5.00001L7.00007 8L6.00007 4.00001L4.00003 11L2.00002 5L0 7Z"
+              transform="translate(1 1)" id="path_1"/>
+        <rect width="16" height="16" id="artboard_1"/>
+        <clipPath id="clip_1">
+            <use xlink:href="#artboard_1" clip-rule="evenodd"/>
+        </clipPath>
+        <clipPath id="clip_2">
+            <use xlink:href="#path_1"/>
+        </clipPath>
+    </defs>
+    <g id="macro-2" clip-path="url(#clip_1)">
+        <use xlink:href="#artboard_1" stroke="none" fill="#FFFFFF"/>
+        <g id="idea/community/platform/icons/src/nodes/class" transform="translate(1 1)">
+            <g id="idea/community/platform/icons/src/nodes/class">
+                <path d="M14 7C14 10.866 10.866 14 7 14C3.134 14 0 10.866 0 7C0 3.134 3.134 0 7 0C10.866 0 14 3.134 14 7"
+                      id="Fill-1" fill="#62B543" fill-opacity="0.6" stroke="none"/>
+                <g id="New-shape">
+                    <g clip-path="url(#clip_2)">
+                        <use xlink:href="#path_1" fill="none" stroke="#686868" stroke-width="4"/>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
