@@ -14,13 +14,33 @@
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Add your extensions here -->
+        <!-- application level service -->
+        <!-- example taken from here: https://github.com/JetBrains/intellij-sdk-docs/tree/master/code_samples -->
+        <applicationService serviceInterface="se.de.hu_berlin.informatik.vtdbg.samples.services.ProjectCountingService"
+                            serviceImplementation="se.de.hu_berlin.informatik.vtdbg.samples.services.impl.ProjectCountingServiceImpl"/>
+
+        <!-- project level service -->
+        <projectService serviceInterface="se.de.hu_berlin.informatik.vtdbg.samples.services.MyProjectService"
+                        serviceImplementation="se.de.hu_berlin.informatik.vtdbg.samples.services.impl.MyProjectServiceImpl"/>
     </extensions>
+
+    <applicationListeners>
+        <listener class="se.de.hu_berlin.informatik.vtdbg.samples.listeners.MyVfsListener"
+                  topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
+    </applicationListeners>
+
+    <projectListeners>
+        <listener class="se.de.hu_berlin.informatik.vtdbg.samples.listeners.MyToolwindowListener"
+                  topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
+    </projectListeners>
 
     <actions>
         <!-- Add your actions here -->
-        <action id="PopupDialogAction" class="PopupDialogAction" text="My Debugging Plugin: Pop Dialog Action"
-                description="Some description!" icon="VisualTraceDebuggerIcons.VISUAL_TRACE">
+        <action id="se.de.hu_berlin.informatik.vtdbg.samples.actions.PopupDialogAction"
+                class="se.de.hu_berlin.informatik.vtdbg.samples.actions.PopupDialogAction"
+                text="My Debugging Plugin: Pop Dialog Action"
+                description="Some description!"
+                icon="VisualTraceDebuggerIcons.VISUAL_TRACE">
             <override-text place="MainMenu" text="Pop Dialog Action"/>
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>
