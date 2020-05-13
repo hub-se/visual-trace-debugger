@@ -31,6 +31,7 @@ public class MyToolwindowListener implements ToolWindowManagerListener {
 //        findmanager.setFindNextModel(findmodel);
 
         ++changeCounter;
+        // comment
 
         toolWindowManager.invokeLater(() -> {
             final WindowManager windowManager = WindowManager.getInstance();

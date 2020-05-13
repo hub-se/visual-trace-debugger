@@ -9,15 +9,19 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    jcenter()
 }
+
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    implementation fileTree(dir: 'src/main/lib', include: ['*.jar'])
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     version '2020.1'
+    plugins = ['java', 'coverage', 'junit', 'testng']
 }
 patchPluginXml {
     changeNotes """

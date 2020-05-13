@@ -23,7 +23,13 @@ public class ProjectOpenCloseListener implements ProjectManagerListener {
     @Override
     public void projectOpened(@NotNull Project project) {
         // Ensure this isn't part of testing
-        if (ApplicationManager.getApplication().isUnitTestMode()) return;
+        if (ApplicationManager.getApplication().isUnitTestMode()) {
+            String title = String.format("Opening Project \"%s\"", project.getName());
+            String message = "<br>Unit test mode!<br><br>" +
+                    "This is turned off...<br><br>";
+            Messages.showMessageDialog(project, message, title, Messages.getInformationIcon());
+            return;
+        }
         // Get the counting service
         ProjectCountingService projectCountingService = ServiceManager.getService(ProjectCountingService.class);
         // Increment the project count
@@ -38,7 +44,7 @@ public class ProjectOpenCloseListener implements ProjectManagerListener {
                     projectCountingService.getProjectCountLimit());
             Messages.showMessageDialog(project, message, title, Messages.getInformationIcon());
         } else {
-            // Transitioned to outside the limit
+            // still inside the limit
             String title = String.format("Opening Project \"%s\"", project.getName());
             String message = String.format(
                     "<br>The number of open projects is %d!<br><br>" +
