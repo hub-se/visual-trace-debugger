@@ -5,7 +5,7 @@ package se.de.hu_berlin.informatik.vtdbg.coverage;
 import com.intellij.coverage.IDEACoverageRunner;
 import com.intellij.execution.configurations.SimpleJavaParameters;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.rt.coverage.data.TraceData;
+import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
 import com.intellij.util.PathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +25,7 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
                                        final boolean isSampling,
                                        @Nullable String sourceMapPath) {
         StringBuilder argument = new StringBuilder("-javaagent:");
-        String agentPath = handleSpacesInAgentPath(PathUtil.getJarPathForClass(TraceData.class));
+        String agentPath = handleSpacesInAgentPath(PathUtil.getJarPathForClass(ExecutionTraceCollector.class));
         if (agentPath == null) return;
         argument.append(agentPath);
         argument.append("=");
