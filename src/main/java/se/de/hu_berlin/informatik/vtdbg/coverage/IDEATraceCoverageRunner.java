@@ -2,16 +2,17 @@
 
 package se.de.hu_berlin.informatik.vtdbg.coverage;
 
-import com.intellij.coverage.IDEACoverageRunner;
+import com.intellij.coverage.*;
 import com.intellij.execution.configurations.SimpleJavaParameters;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.rt.coverage.data.ProjectData;
 import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
 import com.intellij.util.PathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.*;
 
 public class IDEATraceCoverageRunner extends IDEACoverageRunner {
     private static final Logger LOG = Logger.getInstance(IDEATraceCoverageRunner.class);
@@ -89,5 +90,24 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
     @Override
     public boolean isCoverageByTestApplicable() {
         return true;
+    }
+
+    @Override
+    public ProjectData loadCoverageData(@NotNull File sessionDataFile, @Nullable CoverageSuite baseCoverageSuite) {
+        System.out.println("loadCoverageData");
+
+        try {
+            FileInputStream streamIn = new FileInputStream(sessionDataFile.getParent()+"traces.ser");
+            ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
+            Map<Long, byte[]> readCase = (Map<Long, byte[]>) objectinputstream.readObject();
+            for (Map.Entry<Long, byte[]> entry : readCase.entrySet()) {
+                System.out.println(entry.getKey() + "/" + entry.getValue());
+            }
+            objectinputstream.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return super.loadCoverageData(sessionDataFile, baseCoverageSuite);
     }
 }
