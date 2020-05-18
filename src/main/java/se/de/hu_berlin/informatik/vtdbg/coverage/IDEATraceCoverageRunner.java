@@ -2,17 +2,24 @@
 
 package se.de.hu_berlin.informatik.vtdbg.coverage;
 
-import com.intellij.coverage.*;
+import com.intellij.coverage.CoverageSuite;
+import com.intellij.coverage.IDEACoverageRunner;
 import com.intellij.execution.configurations.SimpleJavaParameters;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.rt.coverage.data.ProjectData;
+import com.intellij.rt.coverage.traces.ClassLineEncoding;
 import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
+import com.intellij.rt.coverage.traces.SequiturUtils;
 import com.intellij.util.PathUtil;
+import de.unisb.cs.st.sequitur.input.InputSequence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.Map;
 
 public class IDEATraceCoverageRunner extends IDEACoverageRunner {
     private static final Logger LOG = Logger.getInstance(IDEATraceCoverageRunner.class);
@@ -96,18 +103,47 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
     public ProjectData loadCoverageData(@NotNull File sessionDataFile, @Nullable CoverageSuite baseCoverageSuite) {
         System.out.println("loadCoverageData");
 
-        try {
-            FileInputStream streamIn = new FileInputStream(sessionDataFile.getParent()+"traces.ser");
-            ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
-            Map<Long, byte[]> readCase = (Map<Long, byte[]>) objectinputstream.readObject();
-            for (Map.Entry<Long, byte[]> entry : readCase.entrySet()) {
-                System.out.println(entry.getKey() + "/" + entry.getValue());
-            }
-            objectinputstream.close();
+        Map<Long, byte[]> traces = (Map<Long, byte[]>) readAdditionalObject(
+                sessionDataFile, ExecutionTraceCollector.TRACE_FILE_NAME);
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        Map<Integer, String> idToClassNameMap = (Map<Integer, String>) readAdditionalObject(
+                sessionDataFile, ClassLineEncoding.ID_TO_CLASS_NAME_MAP_NAME);
+
+        if (traces != null && idToClassNameMap != null) {
+            for (Map.Entry<Long, byte[]> entry : traces.entrySet()) {
+                InputSequence<Long> sequence = null;
+                try {
+                    sequence = SequiturUtils.getInputSequenceFromByteArray(entry.getValue(), Long.class);
+                } catch (IOException | ClassNotFoundException e) {
+                    LOG.error("Could not read execution trace.", e);
+                }
+
+                if (sequence != null) {
+                    StringBuilder sb = new StringBuilder();
+                    for (Long encodedStatement : sequence) {
+                        sb.append(ClassLineEncoding.getClassName(encodedStatement, idToClassNameMap))
+                                .append(": ")
+                                .append(ClassLineEncoding.getLineNUmber(encodedStatement))
+                                .append(System.lineSeparator());
+                    }
+
+                    System.out.println("Thread " + entry.getKey() + " -> " + System.lineSeparator() +
+                            sb.toString());
+                }
+            }
         }
+
         return super.loadCoverageData(sessionDataFile, baseCoverageSuite);
+    }
+
+    private static Object readAdditionalObject(@NotNull File sessionDataFile, String fileName) {
+        String file = sessionDataFile.getParent() + fileName;
+        try (FileInputStream streamIn = new FileInputStream(file)) {
+            ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
+            return objectinputstream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            LOG.error("Could not read file " + file, e);
+        }
+        return null;
     }
 }
