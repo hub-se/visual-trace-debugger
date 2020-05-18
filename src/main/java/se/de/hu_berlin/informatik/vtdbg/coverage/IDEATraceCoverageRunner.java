@@ -9,6 +9,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.rt.coverage.data.ProjectData;
 import com.intellij.rt.coverage.traces.ClassLineEncoding;
 import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
+import com.intellij.rt.coverage.traces.FileUtils;
 import com.intellij.rt.coverage.traces.SequiturUtils;
 import com.intellij.util.PathUtil;
 import de.unisb.cs.st.sequitur.input.InputSequence;
@@ -103,11 +104,18 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
     public ProjectData loadCoverageData(@NotNull File sessionDataFile, @Nullable CoverageSuite baseCoverageSuite) {
         System.out.println("loadCoverageData");
 
-        Map<Long, byte[]> traces = (Map<Long, byte[]>) readAdditionalObject(
-                sessionDataFile, ExecutionTraceCollector.TRACE_FILE_NAME);
+        Map<Long, byte[]> traces = null;
+        Map<Integer, String> idToClassNameMap = null;
 
-        Map<Integer, String> idToClassNameMap = (Map<Integer, String>) readAdditionalObject(
-                sessionDataFile, ClassLineEncoding.ID_TO_CLASS_NAME_MAP_NAME);
+        String file = FileUtils.getFilePathUniqueToSessionFile(
+                sessionDataFile, ExecutionTraceCollector.TRACE_FILE_ID);
+        try (FileInputStream streamIn = new FileInputStream(file)) {
+            ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
+            traces = (Map<Long, byte[]>) objectinputstream.readObject();
+            idToClassNameMap = (Map<Integer, String>) objectinputstream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            LOG.error("Could not read file " + file, e);
+        }
 
         if (traces != null && idToClassNameMap != null) {
             for (Map.Entry<Long, byte[]> entry : traces.entrySet()) {
@@ -136,14 +144,4 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
         return super.loadCoverageData(sessionDataFile, baseCoverageSuite);
     }
 
-    private static Object readAdditionalObject(@NotNull File sessionDataFile, String fileName) {
-        String file = sessionDataFile.getParent() + fileName;
-        try (FileInputStream streamIn = new FileInputStream(file)) {
-            ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
-            return objectinputstream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            LOG.error("Could not read file " + file, e);
-        }
-        return null;
-    }
 }
