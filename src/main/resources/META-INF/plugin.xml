@@ -67,4 +67,10 @@
             <add-to-group group-id="RunnerActions" anchor="last"/>
         </action> -->
     </actions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="Trace" secondary="true" icon="AllIcons.General.Modified" anchor="right"
+                    factoryClass="se.de.hu_berlin.informatik.vtdbg.coverage.MyToolWindowFactory"/>
+    </extensions>
+
 </idea-plugin>

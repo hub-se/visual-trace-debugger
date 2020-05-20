@@ -5,13 +5,16 @@ package se.de.hu_berlin.informatik.vtdbg.coverage;
 import com.intellij.coverage.CoverageSuite;
 import com.intellij.coverage.IDEACoverageRunner;
 import com.intellij.execution.configurations.SimpleJavaParameters;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.rt.coverage.data.ProjectData;
 import com.intellij.rt.coverage.traces.ClassLineEncoding;
 import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
 import com.intellij.rt.coverage.traces.FileUtils;
 import com.intellij.rt.coverage.traces.SequiturUtils;
+import com.intellij.util.MessageBusUtil;
 import com.intellij.util.PathUtil;
+import com.intellij.util.messages.MessageBus;
 import de.unisb.cs.st.sequitur.input.InputSequence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -134,14 +137,18 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
                                 .append(ClassLineEncoding.getLineNUmber(encodedStatement))
                                 .append(System.lineSeparator());
                     }
-
+                    MessageBus bus = ApplicationManager.getApplication().getMessageBus();
+                    ChangeActionNotifier changeActionNotifier = bus.syncPublisher(ChangeActionNotifier.CHANGE_ACTION_TOPIC);
+                    changeActionNotifier.changeTrace("Thread " + entry.getKey() + " -> " + System.lineSeparator() +
+                            sb.toString());
                     System.out.println("Thread " + entry.getKey() + " -> " + System.lineSeparator() +
                             sb.toString());
                 }
             }
         }
 
-        return super.loadCoverageData(sessionDataFile, baseCoverageSuite);
+
+        return null;
     }
 
 }
