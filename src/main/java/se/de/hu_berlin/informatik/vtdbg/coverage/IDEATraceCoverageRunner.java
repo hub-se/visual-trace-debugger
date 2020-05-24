@@ -2,16 +2,23 @@
 
 package se.de.hu_berlin.informatik.vtdbg.coverage;
 
+import com.intellij.coverage.CoverageBundle;
 import com.intellij.coverage.CoverageSuite;
 import com.intellij.coverage.IDEACoverageRunner;
 import com.intellij.execution.configurations.SimpleJavaParameters;
+import com.intellij.icons.AllIcons;
+import com.intellij.ide.impl.ContentManagerWatcher;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.wm.*;
 import com.intellij.rt.coverage.data.ProjectData;
 import com.intellij.rt.coverage.traces.ClassLineEncoding;
 import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
 import com.intellij.rt.coverage.traces.FileUtils;
 import com.intellij.rt.coverage.traces.SequiturUtils;
+import com.intellij.ui.content.ContentManager;
 import com.intellij.util.MessageBusUtil;
 import com.intellij.util.PathUtil;
 import com.intellij.util.messages.MessageBus;
@@ -120,6 +127,17 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
             LOG.error("Could not read file " + file, e);
         }
 
+        Project project = ProjectManager.getInstance().getDefaultProject();
+   /*     final ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+        ToolWindow consoleToolWindow = toolWindowManager.getToolWindow(MyToolWindowFactory.ID);
+        if (consoleToolWindow == null) {
+            consoleToolWindow = toolWindowManager.registerToolWindow(MyToolWindowFactory.ID, true, ToolWindowAnchor.RIGHT);
+            consoleToolWindow.setIcon(AllIcons.General.Modified);
+        }
+    */
+        //     MyViewManager.getInstance(project).activateToolwindow(new TraceWindow(),true);
+
+
         if (traces != null && idToClassNameMap != null) {
             for (Map.Entry<Long, byte[]> entry : traces.entrySet()) {
                 InputSequence<Long> sequence = null;
@@ -141,14 +159,17 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
                     ChangeActionNotifier changeActionNotifier = bus.syncPublisher(ChangeActionNotifier.CHANGE_ACTION_TOPIC);
                     changeActionNotifier.changeTrace("Thread " + entry.getKey() + " -> " + System.lineSeparator() +
                             sb.toString());
+                    result = "Thread " + entry.getKey() + " -> " + System.lineSeparator() +
+                            sb.toString();
                     System.out.println("Thread " + entry.getKey() + " -> " + System.lineSeparator() +
                             sb.toString());
                 }
             }
         }
 
-
-        return null;
+        return super.loadCoverageData(sessionDataFile, baseCoverageSuite);
     }
+
+    static String result;
 
 }

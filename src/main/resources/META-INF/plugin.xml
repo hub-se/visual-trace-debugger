@@ -34,9 +34,36 @@
                         serviceImplementation="se.de.hu_berlin.informatik.vtdbg.samples.services.impl.MyProjectServiceImpl"/> -->
 
         <!-- coverage runner extension - can be selected when editing Run Configuration -->
-        <coverageRunner implementation="se.de.hu_berlin.informatik.vtdbg.coverage.IDEATraceCoverageRunner"/>
+        <projectConfigurable groupId="build" instance="se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageOptionsConfigurable" id="coverage"
+                             bundle="messages.CoverageBundle" key="configurable.CoverageOptionsConfigurable.display.name"/>
 
+        <projectService serviceImplementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyViewManager"/>
+        <coverageRunner implementation="se.de.hu_berlin.informatik.vtdbg.coverage.IDEATraceCoverageRunner"/>
+        <executor implementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageExecutor" />
+        <testActionProvider implementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyTrackCoverageActionProvider"/>
     </extensions>
+
+    <actions>
+        <group id="CoverageMenu">
+            <action id="SwitchCoverage" class="com.intellij.coverage.actions.SwitchCoverageSuiteAction" text="Show Co_verage Data..."/>
+            <action id="GenerateCoverageReport" class="se.de.hu_berlin.informatik.vtdbg.coverage.MyGenerateCoverageReportAction"
+                    text="_Generate Coverage Report..." icon="AllIcons.ToolbarDecorator.Export"/>
+            <action id="HideCoverage" class="com.intellij.coverage.actions.HideCoverageInfoAction"/>
+            <separator/>
+        </group>
+        <group id="CoveragePlatformMenu" popup="false">
+            <reference ref="CoverageMenu"/>
+            <add-to-group group-id="RunTestGroup" anchor="last"/>
+        </group>
+    </actions>
+
+<!--    <project-components>
+        <component>
+            <interface-class>com.intellij.coverage.CoverageDataManager</interface-class>
+            <implementation-class>se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageDataManagerImpl</implementation-class>
+            <option name="workspace" value="true"/>
+        </component>
+    </project-components>-->
 
     <!-- some example listeners on application and project level -->
     <applicationListeners>
@@ -69,8 +96,9 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Trace" secondary="true" icon="AllIcons.General.Modified" anchor="right"
+        <toolWindow id="Trace" icon="AllIcons.General.Modified" anchor="right"
                     factoryClass="se.de.hu_berlin.informatik.vtdbg.coverage.MyToolWindowFactory"/>
     </extensions>
 
+    <resource-bundle>messages.MyCoverageBundle</resource-bundle>
 </idea-plugin>
