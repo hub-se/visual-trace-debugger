@@ -96,7 +96,7 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Trace" icon="AllIcons.General.Modified" anchor="right"
+        <toolWindow id="Trace" icon="VisualTraceDebuggerIcons.VISUAL_TRACE" anchor="right"
                     factoryClass="se.de.hu_berlin.informatik.vtdbg.coverage.MyToolWindowFactory"/>
     </extensions>
 

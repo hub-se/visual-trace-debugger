@@ -59,14 +59,14 @@ public class MyViewManager {
         if (requestFocus) {
             myContentManager.setSelectedContent(myContentManager.getContent(traceWindow.getContent()));
             toolWindow.activate(null, false);
-            traceWindow.setTextPane1(IDEATraceCoverageRunner.result);
-            MessageBus messageBus = myProject.getMessageBus();
-            messageBus.connect().subscribe(ChangeActionNotifier.CHANGE_ACTION_TOPIC, new ChangeActionNotifier() {
-                @Override
-                public void changeTrace(String text) {
-                    traceWindow.setTextPane1(text);
-                }
-            });
+           // traceWindow.setTextPane1(IDEATraceCoverageRunner.result);
+//            MessageBus messageBus = myProject.getMessageBus();
+//            messageBus.connect().subscribe(ChangeActionNotifier.CHANGE_ACTION_TOPIC, new ChangeActionNotifier() {
+//                @Override
+//                public void changeTrace(String text) {
+//                    traceWindow.setTextPane1(text);
+//                }
+//            });
         }
     }
 

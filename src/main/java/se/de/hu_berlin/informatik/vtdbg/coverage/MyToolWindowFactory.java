@@ -8,6 +8,8 @@ import com.intellij.ui.content.ContentFactory;
 import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+
 public class MyToolWindowFactory implements ToolWindowFactory {
     public static final String ID = "MyToolWindowFactory";
     TraceWindow myToolWindow;
@@ -19,14 +21,13 @@ public class MyToolWindowFactory implements ToolWindowFactory {
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content content = contentFactory.createContent(myToolWindow.getContent(), "", false);
         toolWindow.getContentManager().addContent(content);
-        if (IDEATraceCoverageRunner.result != null) {
-            myToolWindow.setTextPane1(IDEATraceCoverageRunner.result);
-        }
         MessageBus messageBus = project.getMessageBus();
         messageBus.connect().subscribe(ChangeActionNotifier.CHANGE_ACTION_TOPIC, new ChangeActionNotifier() {
             @Override
-            public void changeTrace(String text) {
-                myToolWindow.setTextPane1(text);
+            public void changeTrace(Map<Long, byte[]> traces, Map<Integer, String> idToClassNameMap) {
+                //traces und idToClassMap hier zum ToolWindow übertragen, damit man vom Plugin aus
+                //darauf Zugriff hat
+                myToolWindow.setTrace(traces, idToClassNameMap);
             }
         });
     }

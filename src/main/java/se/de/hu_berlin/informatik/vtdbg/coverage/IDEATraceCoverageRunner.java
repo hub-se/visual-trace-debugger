@@ -138,38 +138,12 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
         //     MyViewManager.getInstance(project).activateToolwindow(new TraceWindow(),true);
 
 
-        if (traces != null && idToClassNameMap != null) {
-            for (Map.Entry<Long, byte[]> entry : traces.entrySet()) {
-                InputSequence<Long> sequence = null;
-                try {
-                    sequence = SequiturUtils.getInputSequenceFromByteArray(entry.getValue(), Long.class);
-                } catch (IOException | ClassNotFoundException e) {
-                    LOG.error("Could not read execution trace.", e);
-                }
+        MessageBus bus = ApplicationManager.getApplication().getMessageBus();
+        ChangeActionNotifier changeActionNotifier = bus.syncPublisher(ChangeActionNotifier.CHANGE_ACTION_TOPIC);
+        changeActionNotifier.changeTrace(traces,idToClassNameMap);
 
-                if (sequence != null) {
-                    StringBuilder sb = new StringBuilder();
-                    for (Long encodedStatement : sequence) {
-                        sb.append(ClassLineEncoding.getClassName(encodedStatement, idToClassNameMap))
-                                .append(": ")
-                                .append(ClassLineEncoding.getLineNUmber(encodedStatement))
-                                .append(System.lineSeparator());
-                    }
-                    MessageBus bus = ApplicationManager.getApplication().getMessageBus();
-                    ChangeActionNotifier changeActionNotifier = bus.syncPublisher(ChangeActionNotifier.CHANGE_ACTION_TOPIC);
-                    changeActionNotifier.changeTrace("Thread " + entry.getKey() + " -> " + System.lineSeparator() +
-                            sb.toString());
-                    result = "Thread " + entry.getKey() + " -> " + System.lineSeparator() +
-                            sb.toString();
-                    System.out.println("Thread " + entry.getKey() + " -> " + System.lineSeparator() +
-                            sb.toString());
-                }
-            }
-        }
 
         return super.loadCoverageData(sessionDataFile, baseCoverageSuite);
     }
-
-    static String result;
 
 }
