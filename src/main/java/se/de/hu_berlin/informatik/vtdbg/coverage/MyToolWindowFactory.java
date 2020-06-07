@@ -1,5 +1,7 @@
 package se.de.hu_berlin.informatik.vtdbg.coverage;
 
+import com.intellij.execution.testframework.sm.runner.SMTRunnerEventsListener;
+import com.intellij.execution.testframework.sm.runner.SMTestProxy;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
@@ -28,6 +30,13 @@ public class MyToolWindowFactory implements ToolWindowFactory {
                 //traces und idToClassMap hier zum ToolWindow übertragen, damit man vom Plugin aus
                 //darauf Zugriff hat
                 myToolWindow.setTrace(traces, idToClassNameMap);
+            }
+        });
+        messageBus.connect().subscribe(SMTRunnerEventsListener.TEST_STATUS, new MyAnalyticsTestRunnerEventsListener() {
+            @Override
+            public void onTestingFinished(@NotNull SMTestProxy.SMRootTestProxy testsRoot) {
+                myToolWindow.setTextPane1((testsRoot.getChildren().get(0).getStacktrace() == null)?"success":"failed");
+                super.onTestingFinished(testsRoot);
             }
         });
     }
