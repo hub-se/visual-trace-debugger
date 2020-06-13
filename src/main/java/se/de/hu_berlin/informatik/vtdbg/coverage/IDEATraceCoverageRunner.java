@@ -26,6 +26,11 @@ import java.util.Map;
 public class IDEATraceCoverageRunner extends IDEACoverageRunner {
     private static final Logger LOG = Logger.getInstance(IDEATraceCoverageRunner.class);
 
+    /** Set and enable running the TraceAgent, saved in a .jar file after building
+     * it from another project, InelliJCoverage
+     *
+     * This agent collets and builds the execution trace
+     */
     @Override
     public void appendCoverageArgument(final String sessionDataFilePath,
                                        final String[] patterns,
@@ -78,6 +83,10 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
     }
 
 
+    /**
+     *
+     * @return the name that should appear in the list of the coverage runners in run config.
+     */
     @Override
     @NotNull
     public String getPresentableName() {
@@ -101,6 +110,11 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
         return true;
     }
 
+
+    /**
+     * get traces from a file, which was created by the agent, and pass it to MyToolWindowFactory on the message bus
+     * projectData includes the results of the IntelliJCoverageRunner
+     */
     @Override
     public ProjectData loadCoverageData(@NotNull File sessionDataFile, @Nullable CoverageSuite baseCoverageSuite) {
         System.out.println("loadCoverageData");
@@ -117,16 +131,6 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
         } catch (IOException | ClassNotFoundException e) {
             LOG.error("Could not read file " + file, e);
         }
-
-        Project project = ProjectManager.getInstance().getDefaultProject();
-   /*     final ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
-        ToolWindow consoleToolWindow = toolWindowManager.getToolWindow(MyToolWindowFactory.ID);
-        if (consoleToolWindow == null) {
-            consoleToolWindow = toolWindowManager.registerToolWindow(MyToolWindowFactory.ID, true, ToolWindowAnchor.RIGHT);
-            consoleToolWindow.setIcon(AllIcons.General.Modified);
-        }
-    */
-        //     MyViewManager.getInstance(project).activateToolwindow(new TraceWindow(),true);
 
         MessageBus bus = ApplicationManager.getApplication().getMessageBus();
         ChangeActionNotifier changeActionNotifier = bus.syncPublisher(ChangeActionNotifier.CHANGE_ACTION_TOPIC);
