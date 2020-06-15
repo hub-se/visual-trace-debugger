@@ -5,15 +5,18 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
+import com.intellij.openapi.editor.markup.HighlighterTargetArea;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.AllClassesSearch;
 import com.intellij.rt.coverage.traces.ClassLineEncoding;
 import com.intellij.rt.coverage.traces.SequiturUtils;
+import com.intellij.ui.JBColor;
 import com.intellij.util.Query;
 import de.unisb.cs.st.sequitur.input.InputSequence;
 
@@ -33,6 +36,10 @@ import java.util.Map;
  */
 
 public class TraceWindow {
+
+    final static TextAttributes BACKGROUND = new TextAttributes(null, JBColor.cyan,
+            null, EffectType.LINE_UNDERSCORE, Font.PLAIN);
+
     private JPanel content;
     private JTextPane textPane1;
     private JButton button1;
@@ -114,10 +121,7 @@ public class TraceWindow {
      **/
 
     private void showButtonDemo() {
-        button1.addActionListener(e -> {
-            navigateToClass(project, "com.company.Main", 13);
-
-        });
+        button1.addActionListener(e -> navigateToClass(project, "com.company.Main", 13));
 
     }
 
@@ -137,7 +141,7 @@ public class TraceWindow {
         }
         // we need to use line-1 because OpenFileDescriptor is indexing from
         new OpenFileDescriptor(project, psiClass.getContainingFile().getVirtualFile(), line - 1, 0).navigate(true);
-        colorLine(project, line);
+        colorLine(project, line - 1);
 
     }
 
@@ -148,11 +152,23 @@ public class TraceWindow {
      * Note: color is set by default to CYAN and line=13 for showing purposes
      **/
     public void colorLine(Project project, int line) {
-        Color lineBackgroundColor = Color.cyan;
 
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-        final TextAttributes textattributes = new TextAttributes(null, lineBackgroundColor, null, EffectType.LINE_UNDERSCORE, Font.PLAIN);
-        editor.getMarkupModel().addLineHighlighter(line - 1, HighlighterLayer.CARET_ROW, textattributes);
 
+        if (editor == null) {
+            return;
+        }
+
+        // returns the start of the line, but doesn't skip whitespaces
+        int startOffset = editor.getDocument().getLineStartOffset(line);
+        // returns the actual end of the specified line
+        int endOffset = editor.getDocument().getLineEndOffset(line);
+        // skip whitespace chars at the start of the line
+        String text = editor.getDocument().getText(new TextRange(startOffset, endOffset));
+        startOffset += text.length() - text.trim().length();
+
+
+        editor.getMarkupModel().addRangeHighlighter(startOffset, endOffset,
+                HighlighterLayer.CARET_ROW, BACKGROUND, HighlighterTargetArea.EXACT_RANGE);
     }
 }
