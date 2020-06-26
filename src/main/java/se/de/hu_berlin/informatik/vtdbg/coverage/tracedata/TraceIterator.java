@@ -7,10 +7,13 @@ import de.unisb.cs.st.sequitur.input.InputSequence;
 import java.util.ListIterator;
 import java.util.Map;
 
+/**
+ * Simple wrapper class for iterating over sequitur sequences with encoded statements.
+ */
 public class TraceIterator implements ListIterator<Pair<String, Integer>> {
 
-    private ListIterator<Long> iterator;
-    private Map<Integer, String> idToClassNameMap;
+    private final ListIterator<Long> iterator;
+    private final Map<Integer, String> idToClassNameMap;
 
     public TraceIterator(InputSequence<Long> sequence, Map<Integer, String> idToClassNameMap) {
         this(sequence, idToClassNameMap, 0L);
@@ -59,16 +62,16 @@ public class TraceIterator implements ListIterator<Pair<String, Integer>> {
 
     @Override
     public void remove() {
-
+        iterator.remove();
     }
 
     @Override
     public void set(Pair<String, Integer> stringIntegerPair) {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void add(Pair<String, Integer> stringIntegerPair) {
-
+        throw new UnsupportedOperationException();
     }
 }
