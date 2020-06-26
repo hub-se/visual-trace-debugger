@@ -9,6 +9,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.rt.coverage.traces.SequiturUtils;
 import com.intellij.ui.components.JBScrollPane;
 import de.unisb.cs.st.sequitur.input.InputSequence;
+import org.jetbrains.annotations.NotNull;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceIterator;
 import se.de.hu_berlin.informatik.vtdbg.utils.EditorUtils;
@@ -71,20 +72,12 @@ public class TraceWindow {
         buttonRight.addActionListener(e -> {
             if (DumbService.isDumb(project)) {
                 // ignore when not ready
-                Messages.showMessageDialog(project,
-                        "please wait for indices to be generated", "Error", Messages.getWarningIcon());
+                showNoIndexWarning();
                 return;
             }
 
-            String title = tabs.getTitleAt(tabs.getSelectedIndex());
             try {
-                long threadId = Long.valueOf(title.substring(TAB_TITLE_PREFIX.length()));
-
-                TraceIterator iterator = iterators.get(threadId);
-                if (iterator == null) {
-                    iterator = new TraceIterator(sequences.get(threadId), idToClassNameMap, 0);
-                    iterators.put(threadId, iterator);
-                }
+                TraceIterator iterator = getTraceIterator(false);
 
                 if (iterator.hasNext()) {
                     Pair<String, Integer> next = iterator.next();
@@ -92,29 +85,27 @@ public class TraceWindow {
                     EditorUtils.colorLineInEditor(project, next.second, true);
                 }
             } catch (NumberFormatException x) {
-                LOG.error("Can't parse thread ID from tab title: " + title);
+                LOG.error("Can't parse thread ID from tab title: " + tabs.getTitleAt(tabs.getSelectedIndex()));
             }
         });
+    }
+
+    private void showNoIndexWarning() {
+        Messages.showMessageDialog(project,
+                "please wait for indices to be generated",
+                "Error", Messages.getWarningIcon());
     }
 
     private void registerPreviousButton() {
         buttonLeft.addActionListener(e -> {
             if (DumbService.isDumb(project)) {
                 // ignore when not ready
-                Messages.showMessageDialog(project,
-                        "please wait for indices to be generated", "Error", Messages.getWarningIcon());
+                showNoIndexWarning();
                 return;
             }
 
-            String title = tabs.getTitleAt(tabs.getSelectedIndex());
             try {
-                long threadId = Long.valueOf(title.substring(TAB_TITLE_PREFIX.length()));
-
-                TraceIterator iterator = iterators.get(threadId);
-                if (iterator == null) {
-                    iterator = new TraceIterator(sequences.get(threadId), idToClassNameMap, sequences.get(threadId).getLength());
-                    iterators.put(threadId, iterator);
-                }
+                TraceIterator iterator = getTraceIterator(true);
 
                 if (iterator.hasPrevious()) {
                     Pair<String, Integer> previous = iterator.previous();
@@ -122,9 +113,23 @@ public class TraceWindow {
                     EditorUtils.colorLineInEditor(project, previous.second, true);
                 }
             } catch (NumberFormatException x) {
-                LOG.error("Can't parse thread ID from tab title: " + title);
+                LOG.error("Can't parse thread ID from tab title: " + tabs.getTitleAt(tabs.getSelectedIndex()));
             }
         });
+    }
+
+    @NotNull
+    private TraceIterator getTraceIterator(boolean reverse) {
+        String title = tabs.getTitleAt(tabs.getSelectedIndex());
+        long threadId = Long.valueOf(title.substring(TAB_TITLE_PREFIX.length()));
+
+        TraceIterator iterator = iterators.get(threadId);
+        if (iterator == null) {
+            iterator = new TraceIterator(sequences.get(threadId), idToClassNameMap,
+                    reverse ? sequences.get(threadId).getLength() : 0);
+            iterators.put(threadId, iterator);
+        }
+        return iterator;
     }
 
 
