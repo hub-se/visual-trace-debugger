@@ -12,7 +12,7 @@ import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
 import com.intellij.util.PathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import se.de.hu_berlin.informatik.vtdbg.coverage.runner.listener.TraceDataListener;
+import se.de.hu_berlin.informatik.vtdbg.coverage.TraceDataManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -115,9 +115,10 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
         ApplicationManager.getApplication().invokeLater(() -> {
             // notify data manager about new available trace data
             if (baseCoverageSuite != null) {
-                baseCoverageSuite.getProject().getMessageBus()
-                        .syncPublisher(TraceDataListener.TOPIC)
-                        .newTraceData(sessionDataFile, baseCoverageSuite);
+                // add new trace data to the manager service
+                baseCoverageSuite.getProject()
+                        .getService(TraceDataManager.class)
+                        .addTraceData(sessionDataFile, baseCoverageSuite);
             }
         });
 

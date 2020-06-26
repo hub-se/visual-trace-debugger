@@ -67,8 +67,8 @@
     </applicationListeners>
 
     <projectListeners>
-        <listener class="se.de.hu_berlin.informatik.vtdbg.coverage.runner.listener.TraceDataListenerImpl"
-                  topic="se.de.hu_berlin.informatik.vtdbg.coverage.runner.listener.TraceDataListener"/>
+        <!-- <listener class="se.de.hu_berlin.informatik.vtdbg.coverage.runner.listener.TraceDataListenerImpl"
+                  topic="se.de.hu_berlin.informatik.vtdbg.coverage.runner.listener.TraceDataListener"/> -->
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
