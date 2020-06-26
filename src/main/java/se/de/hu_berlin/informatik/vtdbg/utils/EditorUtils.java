@@ -15,7 +15,6 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.AllClassesSearch;
 import com.intellij.ui.JBColor;
 import com.intellij.util.Query;
-import se.de.hu_berlin.informatik.vtdbg.coverage.view.TraceWindow;
 
 import java.awt.*;
 import java.util.Random;
@@ -58,20 +57,41 @@ public class EditorUtils {
             return;
         }
 
-        // removes any old highlighters
-        editor.getMarkupModel().removeAllHighlighters();
         // colors a random line
-        colorLineInEditor(editor, new Random().nextInt(editor.getDocument().getLineCount()) + 1);
+        colorLineInEditor(editor, new Random().nextInt(editor.getDocument().getLineCount()) + 1, true);
+    }
+
+    /**
+     * Colors the specified line in the currently selected text editor
+     *
+     * @param project               current project
+     * @param line                  the line to color (starts at 1)
+     * @param removeOldHighlighters whether to remove old highlighters
+     */
+    public static void colorLineInEditor(Project project, int line, boolean removeOldHighlighters) {
+        Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+
+        if (editor == null) {
+            return;
+        }
+
+        colorLineInEditor(editor, line, removeOldHighlighters);
     }
 
     /**
      * Colors the specified line in the given editor
-     * @param editor an editor
-     * @param line the line to color (starts at 1)
+     *
+     * @param editor                an editor
+     * @param line                  the line to color (starts at 1)
+     * @param removeOldHighlighters whether to remove old highlighters
      */
-    public static void colorLineInEditor(Editor editor, int line) {
+    public static void colorLineInEditor(Editor editor, int line, boolean removeOldHighlighters) {
         if (editor == null) {
             return;
+        }
+        if (removeOldHighlighters) {
+            // removes any old highlighters
+            editor.getMarkupModel().removeAllHighlighters();
         }
         // decrement line number (index starts at 0)
         --line;
