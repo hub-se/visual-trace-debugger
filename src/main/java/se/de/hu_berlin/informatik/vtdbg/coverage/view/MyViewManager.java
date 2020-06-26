@@ -15,7 +15,7 @@ import com.intellij.ui.content.ContentManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageBundle;
-import se.de.hu_berlin.informatik.vtdbg.coverage.TraceDataManager;
+import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 
 import java.io.File;
 import java.util.HashMap;

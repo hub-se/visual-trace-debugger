@@ -6,15 +6,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.rt.coverage.traces.ClassLineEncoding;
 import com.intellij.rt.coverage.traces.SequiturUtils;
-import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import de.unisb.cs.st.sequitur.input.InputSequence;
-import org.jetbrains.annotations.NotNull;
-import se.de.hu_berlin.informatik.vtdbg.coverage.TraceDataManager;
+import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 import se.de.hu_berlin.informatik.vtdbg.utils.EditorUtils;
 
 import javax.swing.*;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

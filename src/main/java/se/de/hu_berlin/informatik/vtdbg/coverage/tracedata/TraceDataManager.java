@@ -1,4 +1,4 @@
-package se.de.hu_berlin.informatik.vtdbg.coverage;
+package se.de.hu_berlin.informatik.vtdbg.coverage.tracedata;
 
 import com.intellij.coverage.CoverageSuite;
 import com.intellij.openapi.diagnostic.Logger;
@@ -8,6 +8,7 @@ import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
 import com.intellij.rt.coverage.traces.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.listener.TraceDataListener;
 import se.de.hu_berlin.informatik.vtdbg.coverage.view.MyViewManager;
 
 import java.io.File;
@@ -36,9 +37,7 @@ public class TraceDataManager {
     public void addTraceData(@NotNull File sessionDataFile, @Nullable CoverageSuite baseCoverageSuite) {
 
         String displayName = MyViewManager.getDisplayName(sessionDataFile, baseCoverageSuite);
-        MyViewManager myViewManager = MyViewManager.getInstance(myProject);
-        // close old content with same name, if any
-        myViewManager.closeView(displayName);
+
 
         // load trace data from file and replace previous data, if any
         String file = FileUtils.getFilePathUniqueToSessionFile(
@@ -51,8 +50,8 @@ public class TraceDataManager {
             // add data to "storage"
             traceData.put(displayName, new Pair<>(traces, idToClassNameMap));
 
-            // add new content to UI
-            myViewManager.createToolWindow(displayName);
+            // inform anyone that is interested about newly added trace data
+            myProject.getMessageBus().syncPublisher(TraceDataListener.TOPIC).newTraceData(displayName);
         } catch (IOException | ClassNotFoundException e) {
             LOG.error("Could not read file " + file, e);
         }

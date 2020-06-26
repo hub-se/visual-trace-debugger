@@ -12,7 +12,7 @@ import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
 import com.intellij.util.PathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import se.de.hu_berlin.informatik.vtdbg.coverage.TraceDataManager;
+import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 
 import java.io.File;
 import java.io.IOException;

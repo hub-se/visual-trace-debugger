@@ -38,7 +38,7 @@
 
         <!-- this installs a new configuration tab in style of the coverage configuration... -->
         <!--<runConfigurationExtension implementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageJavaRunConfigurationExtension"/>-->
-        <projectService serviceImplementation="se.de.hu_berlin.informatik.vtdbg.coverage.TraceDataManager"/>
+        <projectService serviceImplementation="se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager"/>
         <projectService serviceImplementation="se.de.hu_berlin.informatik.vtdbg.coverage.view.MyViewManager"/>
         <coverageRunner implementation="se.de.hu_berlin.informatik.vtdbg.coverage.runner.IDEATraceCoverageRunner"/>
         <programRunner implementation="se.de.hu_berlin.informatik.vtdbg.coverage.runner.MyDefaultJavaCoverageRunner"/>
@@ -67,8 +67,9 @@
     </applicationListeners>
 
     <projectListeners>
-        <!-- <listener class="se.de.hu_berlin.informatik.vtdbg.coverage.runner.listener.TraceDataListenerImpl"
-                  topic="se.de.hu_berlin.informatik.vtdbg.coverage.runner.listener.TraceDataListener"/> -->
+        <!-- this listener is responsible for the creation of the trace window -->
+        <listener class="se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.listener.TraceDataListenerImpl"
+                  topic="se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.listener.TraceDataListener"/>
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
