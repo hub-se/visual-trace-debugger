@@ -1,4 +1,4 @@
-package se.de.hu_berlin.informatik.vtdbg.coverage;
+package se.de.hu_berlin.informatik.vtdbg.coverage.runner;
 
 import com.intellij.coverage.CoverageBundle;
 import se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageBundle;
@@ -70,7 +70,7 @@ public class MyCoverageExecutor extends Executor {
 
   @Override
   public String getContextActionId() {
-    return "RunCoverage";
+    return "RunMyCoverage";
   }
 
   @Override
