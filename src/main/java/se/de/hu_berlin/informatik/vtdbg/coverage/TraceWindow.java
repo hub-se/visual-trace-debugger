@@ -2,7 +2,9 @@ package se.de.hu_berlin.informatik.vtdbg.coverage;
 
 import com.intellij.execution.testframework.sm.runner.SMTestProxy;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
 import com.intellij.openapi.editor.markup.HighlighterTargetArea;
@@ -12,6 +14,8 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.AllClassesSearch;
 import com.intellij.rt.coverage.traces.ClassLineEncoding;
@@ -23,8 +27,8 @@ import de.unisb.cs.st.sequitur.input.InputSequence;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Represents the execution Traces of selected tests
@@ -38,6 +42,9 @@ import java.util.Map;
 public class TraceWindow {
 
     final static TextAttributes BACKGROUND = new TextAttributes(null, JBColor.cyan,
+            null, EffectType.LINE_UNDERSCORE, Font.PLAIN);
+
+    final static TextAttributes BACKGROUND2 = new TextAttributes(null, JBColor.yellow,
             null, EffectType.LINE_UNDERSCORE, Font.PLAIN);
 
     private JPanel content;
@@ -75,7 +82,7 @@ public class TraceWindow {
 
     public void setTestResult(List<? extends SMTestProxy> testInfo) {
         testResults = testInfo;
-        textPane2.setText(testInfo.get(0).getStacktrace()==null?"success":"failed");
+        textPane2.setText(testInfo.get(0).getStacktrace() == null ? "success" : "failed");
     }
 
     /**
@@ -121,18 +128,27 @@ public class TraceWindow {
      **/
 
     private void showButtonDemo() {
-        button1.addActionListener(e -> navigateToClass(project, "com.company.Main", 13));
+        button1.addActionListener(e -> {
+            Map<String, List<Score>> map = new HashMap<>();
+            map.put("com.company.Main", Arrays.asList(new Score(13, 0.5), new Score(15, 0.2)));
+            map.put("com.company.TestClass", Arrays.asList(new Score(13, 0.1), new Score(21, 0.7)));
+            for (Map.Entry<String, List<Score>> item : map.entrySet()) {
+                navigateToClass(project, item.getKey(), item.getValue());
+            }
+
+            //colorLineInFile(project, "com.company.TestClass", Arrays.asList(new Score(13, 0.5), new Score(15, 0.2)));
+        });
 
     }
 
     /**
-     * @param line      which line we want to jump to
+     * @param score     which line we want to jump to with score
      * @param className class in which line is contained
      * @param project   which project user of the plugin is currently working on
      * @Brief: Implements the "jump" / navigation to a given line.
      * note: here is line=13 (for showing purposes)
      **/
-    public void navigateToClass(Project project, String className, int line) {
+    public void navigateToClass(Project project, String className, List<Score> score) {
         Query<PsiClass> search = AllClassesSearch.search(GlobalSearchScope.projectScope(project), project, className::endsWith);
         PsiClass psiClass = search.findFirst();
         if (psiClass == null) {
@@ -140,35 +156,63 @@ public class TraceWindow {
             return;
         }
         // we need to use line-1 because OpenFileDescriptor is indexing from
-        new OpenFileDescriptor(project, psiClass.getContainingFile().getVirtualFile(), line - 1, 0).navigate(true);
-        colorLine(project, line - 1);
-
+        // navigate to file to logicalLine currently 0
+        new OpenFileDescriptor(project, psiClass.getContainingFile().getVirtualFile(), 0, 0).navigate(true);
+        colorLine(project, score);
     }
 
     /**
-     * @param line    which line we want to jump to
+     * @param score   which line we want to jump to
      * @param project which project user of the plugin is currently working on
      * @Brief: sets background for a given line
      * Note: color is set by default to CYAN and line=13 for showing purposes
      **/
-    public void colorLine(Project project, int line) {
+    public void colorLine(Project project, List<Score> score) {
 
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
 
+        colorLineEditor(editor, score);
+    }
+
+    /**
+     * This does not work
+     **/
+    public void colorLineInFile(Project project, String className, List<Score> score) {
+
+        Query<PsiClass> search = AllClassesSearch.search(GlobalSearchScope.projectScope(project), project, className::endsWith);
+        PsiClass psiClass = search.findFirst();
+        if (psiClass == null) {
+            LOG.warn("Class not found");
+            return;
+        }
+        PsiFile file = psiClass.getContainingFile();
+        Document document = PsiDocumentManager.getInstance(file.getProject()).getDocument(file);
+
+        Editor editor = EditorFactory.getInstance().createEditor(document, project, file.getVirtualFile(), true);
+
+        colorLineEditor(editor, score);
+    }
+
+    private void colorLineEditor(Editor editor, List<Score> scores) {
         if (editor == null) {
             return;
         }
+        for (Score score : scores) {
+            // returns the start of the line, but doesn't skip whitespaces
+            int startOffset = editor.getDocument().getLineStartOffset(score.line - 1);
+            // returns the actual end of the specified line
+            int endOffset = editor.getDocument().getLineEndOffset(score.line - 1);
+            // skip whitespace chars at the start of the line
+            String text = editor.getDocument().getText(new TextRange(startOffset, endOffset));
+            startOffset += text.length() - text.trim().length();
 
-        // returns the start of the line, but doesn't skip whitespaces
-        int startOffset = editor.getDocument().getLineStartOffset(line);
-        // returns the actual end of the specified line
-        int endOffset = editor.getDocument().getLineEndOffset(line);
-        // skip whitespace chars at the start of the line
-        String text = editor.getDocument().getText(new TextRange(startOffset, endOffset));
-        startOffset += text.length() - text.trim().length();
 
-
-        editor.getMarkupModel().addRangeHighlighter(startOffset, endOffset,
-                HighlighterLayer.CARET_ROW, BACKGROUND, HighlighterTargetArea.EXACT_RANGE);
+            TextAttributes color = BACKGROUND;
+            if (score.value > 0.4)
+                color = BACKGROUND2;
+            editor.getMarkupModel().addRangeHighlighter(startOffset, endOffset,
+                    HighlighterLayer.CARET_ROW, color, HighlighterTargetArea.EXACT_RANGE);
+        }
     }
+
 }
