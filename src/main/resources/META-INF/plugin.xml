@@ -12,16 +12,14 @@
 
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
-    <!-- these dependencies register Test Listeners. Maybe we need to implement our own Listeners here?...
-    <depends optional="true" config-file="testng-integration.xml">TestNG-J</depends>
-    <depends optional="true" config-file="junit-integration.xml">JUnit</depends> -->
+    <!-- these dependencies register Test Listeners -->
+    <!--<depends optional="true" config-file="testng-integration.xml">TestNG-J</depends>
+    <depends optional="true" config-file="junit-integration.xml">JUnit</depends>-->
 
     <!-- this is the IntelliJ IDE coverage plugin. We extend its IDEA Coverage Runner! -->
     <depends>Coverage</depends>
 
     <depends>com.intellij.modules.platform</depends>
-    <!-- <depends>com.intellij.modules.coverage</depends>
-    <depends>com.intellij.modules.java</depends> -->
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- application level service -->
@@ -34,36 +32,33 @@
                         serviceImplementation="se.de.hu_berlin.informatik.vtdbg.samples.services.impl.MyProjectServiceImpl"/> -->
 
         <!-- coverage runner extension - can be selected when editing Run Configuration -->
-        <projectConfigurable groupId="build" instance="se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageOptionsConfigurable" id="coverage"
-                             bundle="messages.CoverageBundle" key="configurable.CoverageOptionsConfigurable.display.name"/>
+        <!--<projectConfigurable groupId="build" instance="se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageOptionsConfigurable" id="mycoverage"
+                             bundle="messages.MyCoverageBundle" key="configurable.CoverageOptionsConfigurable.display.name"/>-->
 
-        <projectService serviceImplementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyViewManager"/>
-        <coverageRunner implementation="se.de.hu_berlin.informatik.vtdbg.coverage.IDEATraceCoverageRunner"/>
-        <executor implementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageExecutor" />
-        <testActionProvider implementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyTrackCoverageActionProvider"/>
+
+        <!-- this installs a new configuration tab in style of the coverage configuration... -->
+        <!--<runConfigurationExtension implementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageJavaRunConfigurationExtension"/>-->
+        <projectService serviceImplementation="se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager"/>
+        <projectService serviceImplementation="se.de.hu_berlin.informatik.vtdbg.coverage.view.MyViewManager"/>
+        <coverageRunner implementation="se.de.hu_berlin.informatik.vtdbg.coverage.runner.IDEATraceCoverageRunner"/>
+        <programRunner implementation="se.de.hu_berlin.informatik.vtdbg.coverage.runner.MyDefaultJavaCoverageRunner"/>
+        <executor implementation="se.de.hu_berlin.informatik.vtdbg.coverage.runner.MyCoverageExecutor" />
+        <!--<testActionProvider implementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyTrackCoverageActionProvider"/>-->
     </extensions>
 
     <actions>
-        <group id="CoverageMenu">
-            <action id="SwitchCoverage" class="com.intellij.coverage.actions.SwitchCoverageSuiteAction" text="Show Co_verage Data..."/>
-            <action id="GenerateCoverageReport" class="se.de.hu_berlin.informatik.vtdbg.coverage.MyGenerateCoverageReportAction"
+        <!--<group id="MyCoverageMenu">
+            <action id="MySwitchCoverage" class="com.intellij.coverage.actions.SwitchCoverageSuiteAction" text="Show Co_verage Data..."/>
+            <action id="MyGenerateCoverageReport" class="se.de.hu_berlin.informatik.vtdbg.coverage.MyGenerateCoverageReportAction"
                     text="_Generate Coverage Report..." icon="AllIcons.ToolbarDecorator.Export"/>
-            <action id="HideCoverage" class="com.intellij.coverage.actions.HideCoverageInfoAction"/>
+            <action id="MyHideCoverage" class="com.intellij.coverage.actions.HideCoverageInfoAction"/>
             <separator/>
         </group>
-        <group id="CoveragePlatformMenu" popup="false">
-            <reference ref="CoverageMenu"/>
+        <group id="MyCoveragePlatformMenu" popup="false">
+            <reference ref="MyCoverageMenu"/>
             <add-to-group group-id="RunTestGroup" anchor="last"/>
-        </group>
+        </group>-->
     </actions>
-
-<!--    <project-components>
-        <component>
-            <interface-class>com.intellij.coverage.CoverageDataManager</interface-class>
-            <implementation-class>se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageDataManagerImpl</implementation-class>
-            <option name="workspace" value="true"/>
-        </component>
-    </project-components>-->
 
     <!-- some example listeners on application and project level -->
     <applicationListeners>
@@ -72,32 +67,15 @@
     </applicationListeners>
 
     <projectListeners>
-        <!-- <listener class="se.de.hu_berlin.informatik.vtdbg.samples.listeners.MyToolwindowListener"
-                  topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/> -->
+        <!-- this listener is responsible for the creation of the trace window -->
+        <listener class="se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.listener.TraceDataListenerImpl"
+                  topic="se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.listener.TraceDataListener"/>
     </projectListeners>
 
-    <!-- some example actions -->
-    <actions>
-        <!-- Add your actions here -->
-        <!-- <action id="se.de.hu_berlin.informatik.vtdbg.samples.actions.PopupDialogAction"
-                class="se.de.hu_berlin.informatik.vtdbg.samples.actions.PopupDialogAction"
-                text="My Debugging Plugin: Pop Dialog Action"
-                description="Some description!"
-                icon="VisualTraceDebuggerIcons.VISUAL_TRACE">
-            <override-text place="MainMenu" text="Pop Dialog Action"/>
-            <add-to-group group-id="ToolsMenu" anchor="first"/>
-        </action>
-        <action id="runTestWithTrace"
-                class="se.de.hu_berlin.informatik.vtdbg.samples.actions.RunTestWithTraceAction"
-                text="Trace Run"
-                description="runs test and collects execution trace">
-            <add-to-group group-id="RunnerActions" anchor="last"/>
-        </action> -->
-    </actions>
-
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Trace" icon="VisualTraceDebuggerIcons.VISUAL_TRACE" anchor="right"
-                    factoryClass="se.de.hu_berlin.informatik.vtdbg.coverage.MyToolWindowFactory"/>
+        <!-- this makes the trace window always visible. not sure if that is what we want... -->
+        <!-- <toolWindow id="Trace" icon="VisualTraceDebuggerIcons.VISUAL_TRACE" anchor="right" secondary="true"
+                    factoryClass="se.de.hu_berlin.informatik.vtdbg.coverage.MyToolWindowFactory"/> -->
     </extensions>
 
     <resource-bundle>messages.MyCoverageBundle</resource-bundle>

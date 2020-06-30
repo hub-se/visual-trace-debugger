@@ -1,30 +1,25 @@
 // Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 
-package se.de.hu_berlin.informatik.vtdbg.coverage;
+package se.de.hu_berlin.informatik.vtdbg.coverage.runner;
 
 import com.intellij.coverage.CoverageSuite;
 import com.intellij.coverage.IDEACoverageRunner;
 import com.intellij.execution.configurations.SimpleJavaParameters;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.rt.coverage.data.ProjectData;
 import com.intellij.rt.coverage.traces.ExecutionTraceCollector;
-import com.intellij.rt.coverage.traces.FileUtils;
 import com.intellij.util.PathUtil;
-import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.Map;
 
 public class IDEATraceCoverageRunner extends IDEACoverageRunner {
     private static final Logger LOG = Logger.getInstance(IDEATraceCoverageRunner.class);
+    public static final String TRACEIDEA_ID = "traceidea";
 
     /** Set and enable running the TraceAgent, saved in a .jar file after building
      * it from another project, InelliJCoverage
@@ -96,7 +91,7 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
     @Override
     @NotNull
     public String getId() {
-        return "traceidea";
+        return TRACEIDEA_ID;
     }
 
     @Override
@@ -117,27 +112,19 @@ public class IDEATraceCoverageRunner extends IDEACoverageRunner {
      */
     @Override
     public ProjectData loadCoverageData(@NotNull File sessionDataFile, @Nullable CoverageSuite baseCoverageSuite) {
-        System.out.println("loadCoverageData");
+        ApplicationManager.getApplication().invokeLater(() -> {
+            // notify data manager about new available trace data
+            if (baseCoverageSuite != null) {
+                // add new trace data to the manager service
+                baseCoverageSuite.getProject()
+                        .getService(TraceDataManager.class)
+                        .addTraceData(sessionDataFile, baseCoverageSuite);
+            }
+        });
 
-        Map<Long, byte[]> traces = null;
-        Map<Integer, String> idToClassNameMap = null;
-
-        String file = FileUtils.getFilePathUniqueToSessionFile(
-                sessionDataFile, ExecutionTraceCollector.TRACE_FILE_ID);
-        try (FileInputStream streamIn = new FileInputStream(file)) {
-            ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
-            traces = (Map<Long, byte[]>) objectinputstream.readObject();
-            idToClassNameMap = (Map<Integer, String>) objectinputstream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            LOG.error("Could not read file " + file, e);
-        }
-
-        MessageBus bus = ApplicationManager.getApplication().getMessageBus();
-        ChangeActionNotifier changeActionNotifier = bus.syncPublisher(ChangeActionNotifier.CHANGE_ACTION_TOPIC);
-        changeActionNotifier.changeTrace(traces, idToClassNameMap);
-
-        ProjectData projectData = super.loadCoverageData(sessionDataFile, baseCoverageSuite);
-        return projectData;
+        // in the future, we could probably remove this call to the super class
+        // to avoid loading the coverage data (that we may actually not be interested in)?!
+        return super.loadCoverageData(sessionDataFile, baseCoverageSuite);
     }
 
 

@@ -2,8 +2,12 @@ package se.de.hu_berlin.informatik.vtdbg.coverage;
 
 import com.intellij.execution.testframework.sm.runner.SMTRunnerEventsListener;
 import com.intellij.execution.testframework.sm.runner.SMTestProxy;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import se.de.hu_berlin.informatik.vtdbg.coverage.view.TraceWindow;
+
+import java.util.List;
 
 /**
  * Get testData from the onTestingFinished function to see which tests failed and which passed
@@ -14,10 +18,11 @@ import org.jetbrains.annotations.Nullable;
  * @since 1.0
  */
 public class MyAnalyticsTestRunnerEventsListener implements SMTRunnerEventsListener {
-    TraceWindow myToolWindow;
 
-    public MyAnalyticsTestRunnerEventsListener(TraceWindow myToolWindow) {
-        this.myToolWindow = myToolWindow;
+    private final Project myProject;
+
+    public MyAnalyticsTestRunnerEventsListener(@NotNull Project project) {
+        myProject = project;
     }
 
     @Override
@@ -27,7 +32,9 @@ public class MyAnalyticsTestRunnerEventsListener implements SMTRunnerEventsListe
 
     @Override
     public void onTestingFinished(@NotNull SMTestProxy.SMRootTestProxy testsRoot) {
-        myToolWindow.setTestResult(testsRoot.getChildren());
+        //myToolWindow.setTestResult(testsRoot.getChildren());
+//        List<? extends SMTestProxy> testInfo = testsRoot.getChildren();
+//        String testResult = testInfo.get(0).getStacktrace()==null?"success":"failed";
     }
 
     @Override
