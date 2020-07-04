@@ -6,10 +6,12 @@ import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
 import com.intellij.openapi.editor.markup.HighlighterTargetArea;
 import com.intellij.openapi.editor.markup.TextAttributes;
+import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.AllClassesSearch;
@@ -74,8 +76,19 @@ public class EditorUtils {
      * @param removeOldHighlighters whether to remove old highlighters
      */
     public static void colorClassSBFL(Project project, String className, List<Score> score, boolean removeOldHighlighters) {
+        VirtualFile[] open = FileEditorManager.getInstance(project).getOpenFiles();
+        String name = className.replace(".", "/");
+        boolean contains = false;
+        for (VirtualFile editor : open) {
+            if (editor.getPresentableUrl().contains(name)) {
+                contains = true;
+            }
+        }
+        if (!contains)
+            return;
         //navigate to class is needed because otherwise it is not possible to color it
-        navigateToClass(project,className,0);
+        navigateToClass(project, className, 0);
+
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
 
         if (editor == null) {
@@ -140,9 +153,9 @@ public class EditorUtils {
         }
         for (Score score : scores) {
             // returns the start of the line, but doesn't skip whitespaces
-            int startOffset = editor.getDocument().getLineStartOffset(score.line-1);
+            int startOffset = editor.getDocument().getLineStartOffset(score.line - 1);
             // returns the actual end of the specified line
-            int endOffset = editor.getDocument().getLineEndOffset(score.line-1);
+            int endOffset = editor.getDocument().getLineEndOffset(score.line - 1);
             // skip whitespace chars at the start of the line
             String text = editor.getDocument().getText(new TextRange(startOffset, endOffset));
             startOffset += text.length() - text.trim().length();
@@ -155,7 +168,6 @@ public class EditorUtils {
                     HighlighterLayer.CARET_ROW, color, HighlighterTargetArea.EXACT_RANGE);
         }
     }
-
 
 
 }
