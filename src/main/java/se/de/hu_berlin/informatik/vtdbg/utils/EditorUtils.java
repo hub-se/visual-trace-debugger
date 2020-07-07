@@ -6,7 +6,6 @@ import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
 import com.intellij.openapi.editor.markup.HighlighterTargetArea;
 import com.intellij.openapi.editor.markup.TextAttributes;
-import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
@@ -21,6 +20,7 @@ import se.de.hu_berlin.informatik.vtdbg.coverage.Score;
 
 import java.awt.*;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class EditorUtils {
@@ -68,6 +68,20 @@ public class EditorUtils {
         colorLineInEditor(editor, new Random().nextInt(editor.getDocument().getLineCount()) + 1, true);
     }
 
+
+    /**
+     * Colors all the open class based on (SBFL) score
+     *
+     * @param project               current project
+     * @param score                 SBFL score for each executed line
+     * @param removeOldHighlighters whether to remove old highlighters
+     */
+    public static void colorAllOpenClassSBFL(Project project, Map<String, List<Score>> score, boolean removeOldHighlighters) {
+        for (Map.Entry<String, List<Score>> item : score.entrySet()) {
+            EditorUtils.colorClassSBFL(project, item.getKey(), score, false);
+        }
+    }
+
     /**
      * Colors the specified class based on (SBFL) score in the given editor
      *
@@ -75,13 +89,13 @@ public class EditorUtils {
      * @param score                 SBFL score for each executed line
      * @param removeOldHighlighters whether to remove old highlighters
      */
-    public static void colorClassSBFL(Project project, String className, List<Score> score, boolean removeOldHighlighters) {
+    public static void colorClassSBFL(Project project, String className, Map<String, List<Score>> score, boolean removeOldHighlighters) {
         VirtualFile[] open = FileEditorManager.getInstance(project).getOpenFiles();
-        String name = className.replace(".", "/");
         boolean contains = false;
         for (VirtualFile editor : open) {
-            if (editor.getPresentableUrl().contains(name)) {
+            if (editor.getPresentableUrl().contains(className)) {
                 contains = true;
+                break;
             }
         }
         if (!contains)
@@ -94,7 +108,8 @@ public class EditorUtils {
         if (editor == null) {
             return;
         }
-        colorClassInEditor(editor, score, removeOldHighlighters);
+        List<Score> currentScore = score.get(className);
+        colorClassInEditor(editor, currentScore, removeOldHighlighters);
     }
 
     public static void colorClassSBFL(Project project, int line, boolean removeOldHighlighters) {
