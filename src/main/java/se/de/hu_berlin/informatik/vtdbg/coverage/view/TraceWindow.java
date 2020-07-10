@@ -103,12 +103,12 @@ public class TraceWindow {
 
     private void createBarChart(CategoryDataset dataset) {
         JFreeChart barChart = ChartFactory.createBarChart(
-                "SBFL Chart",                       //title
+                "SBFL Trace Chart",                       //title
                 "Line",                   //categoryAxisLabel
                 "Score",                    //valueAxisLabel
                 dataset,                                //dataset
                 PlotOrientation.VERTICAL,               //plot orientation
-                true,                             //legend
+                false,                             //legend
                 true,                            //tooltips
                 false);                            //urls
         /* Get instance of CategoryPlot */
@@ -228,9 +228,9 @@ public class TraceWindow {
             double greenscore = 0.3;
             double yellowscore = 0.7;
             tlength = 0;
-            String low = "low probability";
-            String medium = "medium probability";
-            String high = "high probability";
+            String low = "low score";
+            String medium = "medium score";
+            String high = "high score";
             category_1 = Color.green;
             category_2 = Color.yellow;
             category_3 = Color.red;
@@ -266,7 +266,7 @@ public class TraceWindow {
                     tlength += 1;
                     if (value < greenscore) {
                         dataset.addValue(value, low, sb.toString());
-                        category_temp = Color.green;
+                        category_temp = Color.red;
                     }
                     else {
                         if (value < yellowscore) {
@@ -275,7 +275,7 @@ public class TraceWindow {
                         }
                         else {
                             dataset.addValue(value, high , sb.toString());
-                            category_temp = Color.red;
+                            category_temp = Color.green;
                         }
                     }
                     //get the order of colors for the bar chart
