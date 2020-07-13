@@ -2,20 +2,27 @@ package se.de.hu_berlin.informatik.vtdbg.coverage.view;
 
 import com.intellij.execution.testframework.sm.runner.SMTestProxy;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.rt.coverage.traces.SequiturUtils;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.messages.MessageBus;
 import de.unisb.cs.st.sequitur.input.InputSequence;
 import org.jetbrains.annotations.NotNull;
+import se.de.hu_berlin.informatik.vtdbg.coverage.Score;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceIterator;
 import se.de.hu_berlin.informatik.vtdbg.utils.EditorUtils;
+import se.de.hu_berlin.informatik.vtdbg.utils.VirtualHelper;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +55,8 @@ public class TraceWindow {
     private Map<Long, InputSequence<Long>> sequences = new HashMap<>();
     private Map<Long, TraceIterator> iterators = new HashMap<>();
 
+    private boolean coloring = false;
+
     private static final Logger LOG = Logger.getInstance(TraceWindow.class);
 
     public TraceWindow(Project project, TraceDataManager data, String displayName) {
@@ -78,11 +87,16 @@ public class TraceWindow {
 
             try {
                 TraceIterator iterator = getTraceIterator(false);
-
+//                Map<String, List<Score>> map = new HashMap<>();
+//                map.put("com.company.Main", Arrays.asList(new Score(13, 0.5), new Score(15, 0.2)));
+//                map.put("com.company.TestClass", Arrays.asList(new Score(13, 0.1), new Score(21, 0.7)));
+//                for (Map.Entry<String, List<Score>> item : map.entrySet()) {
+//                    navigateToClass(project, item.getKey(), item.getValue());
+//                }
                 if (iterator.hasNext()) {
                     Pair<String, Integer> next = iterator.next();
                     EditorUtils.navigateToClass(project, next.first, next.second);
-                    EditorUtils.colorLineInEditor(project, next.second, true);
+                    EditorUtils.colorClassSBFL(project, next.second, true);
                 }
             } catch (NumberFormatException x) {
                 LOG.error("Can't parse thread ID from tab title: " + tabs.getTitleAt(tabs.getSelectedIndex()));
@@ -110,7 +124,7 @@ public class TraceWindow {
                 if (iterator.hasPrevious()) {
                     Pair<String, Integer> previous = iterator.previous();
                     EditorUtils.navigateToClass(project, previous.first, previous.second);
-                    EditorUtils.colorLineInEditor(project, previous.second, true);
+                    EditorUtils.colorClassSBFL(project, previous.second, false);
                 }
             } catch (NumberFormatException x) {
                 LOG.error("Can't parse thread ID from tab title: " + tabs.getTitleAt(tabs.getSelectedIndex()));
@@ -139,12 +153,39 @@ public class TraceWindow {
     }
 
     private void showColorButtonDemo() {
-        colorButton.addActionListener(e -> EditorUtils.colorRandomLine(project));
+        colorButton.addActionListener(e -> {
+            Map<String, List<Score>> map = new HashMap<>();
+            map.put("com/company/Main", Arrays.asList(new Score(11, 0.5), new Score(12, 0.9),
+                    new Score(13, 0.2), new Score(14, 0.5), new Score(15, 0.2)));
+            map.put("com/company/TestClass", Arrays.asList(new Score(13, 0.1), new Score(21, 0.7)));
 
+            EditorUtils.colorAllOpenClassSBFL(project, map, false);
+            colorOpenedClass(map);
+        });
+    }
+
+    /**
+     * colors every newly opened editor window as long as SBFL scores are available in the map
+     * after the color button has been clicked on at least once
+     *
+     * @param map includes the coverage data for all the executed tests
+     */
+    private void colorOpenedClass(Map<String, List<Score>> map) {
+        if (!coloring) {
+            MessageBus messageBus = project.getMessageBus();
+            messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
+                @Override
+                public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                    EditorUtils.colorClassSBFL(project, VirtualHelper.getShortPath(project, file), map, false);
+                }
+            });
+        }
+        coloring = true;
     }
 
     /**
      * collects and processes trace data
+     *
      * @param dataManager the trace data manager which provides the data
      * @param displayName the respective data id
      */
