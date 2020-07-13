@@ -14,18 +14,31 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.messages.MessageBus;
 import de.unisb.cs.st.sequitur.input.InputSequence;
 import org.jetbrains.annotations.NotNull;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.renderer.category.BarRenderer;
 import se.de.hu_berlin.informatik.vtdbg.coverage.Score;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceIterator;
 import se.de.hu_berlin.informatik.vtdbg.utils.EditorUtils;
 import se.de.hu_berlin.informatik.vtdbg.utils.VirtualHelper;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.ui.ApplicationFrame;
+import org.jfree.ui.RefineryUtilities;
+
 import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Represents the execution Traces of selected tests
@@ -45,7 +58,14 @@ public class TraceWindow {
     private JButton colorButton;
     private JButton buttonLeft;
     private JButton buttonRight;
-
+    private Color category_1;   //for coloring purposes
+    private Color category_2;   //for coloring purposes
+    private Color category_3;   //for coloring purposes
+    private int category_count; //for coloring purposes
+    private Color category_temp;//for coloring purposes
+    private String[] tclass;    //for navigation purposes
+    private int tlength;        //for navigation purposes
+    private int[] tline;        //for navigation purposes
 
     List<? extends SMTestProxy> testResults;
 
@@ -75,6 +95,41 @@ public class TraceWindow {
      */
     public JPanel getContent() {
         return content;
+    }
+
+    private void createLineChart(CategoryDataset dataset){
+        JFreeChart lineChart = ChartFactory.createLineChart(
+                "SBFL Chart",
+                "Line","Score",
+                dataset,
+                PlotOrientation.VERTICAL,
+                true,true,false);
+
+        ChartPanel chartPanel = new ChartPanel( lineChart );
+        chartPanel.setPreferredSize( new java.awt.Dimension( 560 , 367 ) );
+        tabs.addTab("Title", chartPanel);
+    }
+
+    private void createBarChart(CategoryDataset dataset) {
+        JFreeChart barChart = ChartFactory.createBarChart(
+                "SBFL Trace Chart",                       //title
+                "Line",                   //categoryAxisLabel
+                "Score",                    //valueAxisLabel
+                dataset,                                //dataset
+                PlotOrientation.VERTICAL,               //plot orientation
+                false,                             //legend
+                true,                            //tooltips
+                false);                            //urls
+        /* Get instance of CategoryPlot */
+        CategoryPlot plot = barChart.getCategoryPlot();
+        /* Change Bar colors */
+        BarRenderer renderer = (BarRenderer) plot.getRenderer();
+        renderer.setSeriesPaint(0, category_1);
+        renderer.setSeriesPaint(1, category_2);
+        renderer.setSeriesPaint(2, category_3);
+        ChartPanel chartPanel = new ChartPanel( barChart );
+        chartPanel.setPreferredSize(new java.awt.Dimension( 560 , 367 ) );
+        tabs.addTab("Title", chartPanel);
     }
 
     private void registerNextButton() {
@@ -211,19 +266,85 @@ public class TraceWindow {
     private void fillForm() {
         // this is only for testing and should be replaced by a chart view or something like that @Enrico
         if (sequences != null) {
+            double greenscore = 0.3;
+            double yellowscore = 0.7;
+            tlength = 0;
+            String low = "low score";
+            String medium = "medium score";
+            String high = "high score";
+            category_1 = Color.green;
+            category_2 = Color.yellow;
+            category_3 = Color.red;
+            String tempString = "";
+            Random dice = new Random();
+
+            //prepare dataset for bar chart
+            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+            double defaultscore = 0.5;
+            category_count = 0;
+
+            //create bar chart from trace
             for (Map.Entry<Long, InputSequence<Long>> sequence : sequences.entrySet()) {
                 StringBuilder sb = new StringBuilder();
+                //cycle through iterator once to get the length of the trace, then define an array of said length
                 TraceIterator iterator = new TraceIterator(sequence.getValue(), idToClassNameMap, 0);
                 while (iterator.hasNext()) {
+                    tlength += 1;
+                    iterator.next();
+                }
+                int tline[] = new int[tlength];
+                String[] tclass = new String[tlength];
+                tlength = 0;
+                iterator = new TraceIterator(sequence.getValue(), idToClassNameMap, 0);
+                while (iterator.hasNext()) {
+                    sb.setLength(0);
                     Pair<String, Integer> next = iterator.next();
-                    sb.append(next.first).append(": ").append(next.second).append(System.lineSeparator());
+                    sb.append(Integer.valueOf(tlength+1)).append(": ").append(next.first).append(": ").append(next.second).append(System.lineSeparator());
+                    double value = dice.nextDouble();
+                    //double value = defaultscore;
+                    //tclass[tlength] = next.first;
+                    //tline[tlength] = next.second;
+                    tlength += 1;
+                    if (value < greenscore) {
+                        dataset.addValue(value, low, sb.toString());
+                        category_temp = Color.red;
+                    }
+                    else {
+                        if (value < yellowscore) {
+                            dataset.addValue(value, medium , sb.toString());
+                            category_temp = Color.yellow;
+                        }
+                        else {
+                            dataset.addValue(value, high , sb.toString());
+                            category_temp = Color.green;
+                        }
+                    }
+                    //get the order of colors for the bar chart
+                    switch(category_count){
+                        case 0:
+                            category_1 = category_temp;
+                            category_count +=1;
+                            break;
+                        case 1:
+                            if (!category_1.equals(category_temp)) {
+                                category_2 = category_temp;
+                                category_count += 1;
+                            } break;
+                        case 2:
+                            if (!category_1.equals(category_temp) && !category_2.equals(category_temp)) {
+                                category_3 = category_temp;
+                                category_count += 1;
+                            } break;
+                        case 3: break;
+                    }
                 }
 
                 //printing the traces here only for testing / showing purposes
-                JTextPane textPane = new JTextPane();
-                textPane.setText(sb.toString());
-                JBScrollPane jbScrollPane = new JBScrollPane(textPane);
-                tabs.add(TAB_TITLE_PREFIX + sequence.getKey(), jbScrollPane);
+                //JTextPane textPane = new JTextPane();
+                //textPane.setText(sb.toString());
+
+                createBarChart(dataset);
+                //createLineChart(dataset);
             }
         }
     }
