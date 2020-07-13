@@ -21,6 +21,8 @@ dependencies {
     implementation fileTree(dir: 'src/main/lib', include: ['*.jar'])
     compile group: 'de.unisb.cs.st', name: 'sequitur', version: '1.0'
     compile "de.unisb.cs.st:sequitur:1.0"
+    // https://mvnrepository.com/artifact/jfree/jfreechart
+    compile group: 'jfree', name: 'jfreechart', version: '1.0.12'
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/

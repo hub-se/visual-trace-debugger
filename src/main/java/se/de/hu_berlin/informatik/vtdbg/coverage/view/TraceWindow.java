@@ -10,35 +10,28 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.rt.coverage.traces.SequiturUtils;
-import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.messages.MessageBus;
 import de.unisb.cs.st.sequitur.input.InputSequence;
 import org.jetbrains.annotations.NotNull;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 import se.de.hu_berlin.informatik.vtdbg.coverage.Score;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceIterator;
 import se.de.hu_berlin.informatik.vtdbg.utils.EditorUtils;
 import se.de.hu_berlin.informatik.vtdbg.utils.VirtualHelper;
 
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.ui.ApplicationFrame;
-import org.jfree.ui.RefineryUtilities;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Represents the execution Traces of selected tests
@@ -99,11 +92,11 @@ public class TraceWindow {
 
     private void createLineChart(CategoryDataset dataset){
         JFreeChart lineChart = ChartFactory.createLineChart(
-                "SBFL Chart",
-                "Line","Score",
+                null,
+                "Line", "Score",
                 dataset,
                 PlotOrientation.VERTICAL,
-                true,true,false);
+                true, true, false);
 
         ChartPanel chartPanel = new ChartPanel( lineChart );
         chartPanel.setPreferredSize( new java.awt.Dimension( 560 , 367 ) );
@@ -112,7 +105,7 @@ public class TraceWindow {
 
     private void createBarChart(CategoryDataset dataset) {
         JFreeChart barChart = ChartFactory.createBarChart(
-                "SBFL Trace Chart",                       //title
+                null,                       //title
                 "Line",                   //categoryAxisLabel
                 "Score",                    //valueAxisLabel
                 dataset,                                //dataset
