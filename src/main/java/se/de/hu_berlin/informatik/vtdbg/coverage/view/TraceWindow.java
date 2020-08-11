@@ -9,18 +9,22 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.rt.coverage.traces.ClassLineEncoding;
 import com.intellij.rt.coverage.traces.SequiturUtils;
 import com.intellij.util.messages.MessageBus;
 import de.unisb.cs.st.sequitur.input.InputSequence;
 import org.jetbrains.annotations.NotNull;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.*;
+import org.jfree.chart.entity.ChartEntity;
+import org.jfree.chart.entity.XYItemEntity;
+import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.renderer.category.BarRenderer;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.StandardXYBarPainter;
+import org.jfree.data.xy.IntervalXYDataset;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 import se.de.hu_berlin.informatik.vtdbg.coverage.Score;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceIterator;
@@ -30,6 +34,7 @@ import se.de.hu_berlin.informatik.vtdbg.utils.VirtualHelper;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
 
@@ -47,8 +52,6 @@ public class TraceWindow {
     public static final String TAB_TITLE_PREFIX = "Thread ";
     private JPanel content;
     private JTabbedPane tabs;
-    private JButton button1;
-    private JButton colorButton;
     private JButton buttonLeft;
     private JButton buttonRight;
     private Color category_1;   //for coloring purposes
@@ -56,9 +59,6 @@ public class TraceWindow {
     private Color category_3;   //for coloring purposes
     private int category_count; //for coloring purposes
     private Color category_temp;//for coloring purposes
-    private String[] tclass;    //for navigation purposes
-    private int tlength;        //for navigation purposes
-    private int[] tline;        //for navigation purposes
 
     List<? extends SMTestProxy> testResults;
 
@@ -76,8 +76,6 @@ public class TraceWindow {
         this.project = project;
         readData(data, displayName);
         fillForm();
-        showButtonDemo();
-        showColorButtonDemo();
 
         registerNextButton();
         registerPreviousButton();
@@ -88,41 +86,6 @@ public class TraceWindow {
      */
     public JPanel getContent() {
         return content;
-    }
-
-    private void createLineChart(CategoryDataset dataset){
-        JFreeChart lineChart = ChartFactory.createLineChart(
-                null,
-                "Line", "Score",
-                dataset,
-                PlotOrientation.VERTICAL,
-                true, true, false);
-
-        ChartPanel chartPanel = new ChartPanel( lineChart );
-        chartPanel.setPreferredSize( new java.awt.Dimension( 560 , 367 ) );
-        tabs.addTab("Title", chartPanel);
-    }
-
-    private void createBarChart(CategoryDataset dataset) {
-        JFreeChart barChart = ChartFactory.createBarChart(
-                null,                       //title
-                "Line",                   //categoryAxisLabel
-                "Score",                    //valueAxisLabel
-                dataset,                                //dataset
-                PlotOrientation.VERTICAL,               //plot orientation
-                false,                             //legend
-                true,                            //tooltips
-                false);                            //urls
-        /* Get instance of CategoryPlot */
-        CategoryPlot plot = barChart.getCategoryPlot();
-        /* Change Bar colors */
-        BarRenderer renderer = (BarRenderer) plot.getRenderer();
-        renderer.setSeriesPaint(0, category_1);
-        renderer.setSeriesPaint(1, category_2);
-        renderer.setSeriesPaint(2, category_3);
-        ChartPanel chartPanel = new ChartPanel( barChart );
-        chartPanel.setPreferredSize(new java.awt.Dimension( 560 , 367 ) );
-        tabs.addTab("Title", chartPanel);
     }
 
     private void registerNextButton() {
@@ -144,7 +107,7 @@ public class TraceWindow {
                 if (iterator.hasNext()) {
                     Pair<String, Integer> next = iterator.next();
                     EditorUtils.navigateToClass(project, next.first, next.second);
-                    EditorUtils.colorClassSBFL(project, next.second, true);
+                    EditorUtils.colorLineInEditor(project, next.second, true);
                 }
             } catch (NumberFormatException x) {
                 LOG.error("Can't parse thread ID from tab title: " + tabs.getTitleAt(tabs.getSelectedIndex()));
@@ -172,7 +135,7 @@ public class TraceWindow {
                 if (iterator.hasPrevious()) {
                     Pair<String, Integer> previous = iterator.previous();
                     EditorUtils.navigateToClass(project, previous.first, previous.second);
-                    EditorUtils.colorClassSBFL(project, previous.second, false);
+                    EditorUtils.colorLineInEditor(project, previous.second, true);
                 }
             } catch (NumberFormatException x) {
                 LOG.error("Can't parse thread ID from tab title: " + tabs.getTitleAt(tabs.getSelectedIndex()));
@@ -194,22 +157,10 @@ public class TraceWindow {
         return iterator;
     }
 
-
-    private void showButtonDemo() {
-        button1.addActionListener(e -> EditorUtils.navigateToClass(project, "com.company.Main", 13));
-
-    }
-
-    private void showColorButtonDemo() {
-        colorButton.addActionListener(e -> {
-            Map<String, List<Score>> map = new HashMap<>();
-            map.put("com/company/Main", Arrays.asList(new Score(11, 0.5), new Score(12, 0.9),
-                    new Score(13, 0.2), new Score(14, 0.5), new Score(15, 0.2)));
-            map.put("com/company/TestClass", Arrays.asList(new Score(13, 0.1), new Score(21, 0.7)));
-
-            EditorUtils.colorAllOpenClassSBFL(project, map, false);
-            colorOpenedClass(map);
-        });
+    @NotNull
+    private ListIterator<Long> getIndexedTraceIterator(Map.Entry<Long, InputSequence<Long>> sequence, boolean reverse) {
+        InputSequence<Long> inputSequence = sequences.get(sequence.getKey());
+        return inputSequence.iterator(reverse ? inputSequence.getLength() : 0);
     }
 
     /**
@@ -257,89 +208,110 @@ public class TraceWindow {
     }
 
     private void fillForm() {
-        // this is only for testing and should be replaced by a chart view or something like that @Enrico
         if (sequences != null) {
-            double greenscore = 0.3;
-            double yellowscore = 0.7;
-            tlength = 0;
-            String low = "low score";
-            String medium = "medium score";
-            String high = "high score";
-            category_1 = Color.green;
-            category_2 = Color.yellow;
-            category_3 = Color.red;
-            String tempString = "";
-            Random dice = new Random();
-
-            //prepare dataset for bar chart
-            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-            double defaultscore = 0.5;
-            category_count = 0;
-
-            //create bar chart from trace
             for (Map.Entry<Long, InputSequence<Long>> sequence : sequences.entrySet()) {
-                StringBuilder sb = new StringBuilder();
-                //cycle through iterator once to get the length of the trace, then define an array of said length
-                TraceIterator iterator = new TraceIterator(sequence.getValue(), idToClassNameMap, 0);
-                while (iterator.hasNext()) {
-                    tlength += 1;
-                    iterator.next();
-                }
-                int tline[] = new int[tlength];
-                String[] tclass = new String[tlength];
-                tlength = 0;
-                iterator = new TraceIterator(sequence.getValue(), idToClassNameMap, 0);
-                while (iterator.hasNext()) {
-                    sb.setLength(0);
-                    Pair<String, Integer> next = iterator.next();
-                    sb.append(Integer.valueOf(tlength+1)).append(": ").append(next.first).append(": ").append(next.second).append(System.lineSeparator());
-                    double value = dice.nextDouble();
-                    //double value = defaultscore;
-                    //tclass[tlength] = next.first;
-                    //tline[tlength] = next.second;
-                    tlength += 1;
-                    if (value < greenscore) {
-                        dataset.addValue(value, low, sb.toString());
-                        category_temp = Color.red;
-                    }
-                    else {
-                        if (value < yellowscore) {
-                            dataset.addValue(value, medium , sb.toString());
-                            category_temp = Color.yellow;
-                        }
-                        else {
-                            dataset.addValue(value, high , sb.toString());
-                            category_temp = Color.green;
-                        }
-                    }
-                    //get the order of colors for the bar chart
-                    switch(category_count){
-                        case 0:
-                            category_1 = category_temp;
-                            category_count +=1;
-                            break;
-                        case 1:
-                            if (!category_1.equals(category_temp)) {
-                                category_2 = category_temp;
-                                category_count += 1;
-                            } break;
-                        case 2:
-                            if (!category_1.equals(category_temp) && !category_2.equals(category_temp)) {
-                                category_3 = category_temp;
-                                category_count += 1;
-                            } break;
-                        case 3: break;
-                    }
+                long tlength = sequence.getValue().getLength();
+                if (tlength > Integer.MAX_VALUE) {
+                    throw new IllegalStateException("trace too long!");
                 }
 
-                //printing the traces here only for testing / showing purposes
-                //JTextPane textPane = new JTextPane();
-                //textPane.setText(sb.toString());
+                // store the "SBFL" scores
+                float[] scores = new float[(int) tlength];
+                float highestScore = Float.MIN_VALUE;
+                float lowestScore = Float.MAX_VALUE;
 
-                createBarChart(dataset);
-                //createLineChart(dataset);
+                // store the element indices
+                long[] indices = new long[(int) tlength];
+
+                Random dice = new Random();
+
+                XYSeries series = new XYSeries("lines");
+
+                ListIterator<Long> iterator = getIndexedTraceIterator(sequence, false);
+                int counter = 0;
+                while (iterator.hasNext()) {
+                    long next = iterator.next();
+                    indices[counter] = next;
+
+                    // get random score (for testing)
+                    float value = dice.nextFloat();
+                    highestScore = Math.max(highestScore, value);
+                    lowestScore = Math.min(lowestScore, value);
+                    scores[counter] = value;
+
+                    series.add(counter, value, false);
+
+                    ++counter;
+                }
+                XYSeriesCollection dataset = new XYSeriesCollection();
+                dataset.addSeries(series);
+
+                createBarChart(sequence.getKey(), dataset, indices, lowestScore, highestScore, scores);
             }
         }
+    }
+
+    private void createBarChart(long threadId, IntervalXYDataset dataset, long[] indices,
+                                float lowestScore, float highestScore, float[] scores) {
+        JFreeChart barChart = ChartFactory.createXYBarChart(null, "Line",
+                false, "Score", dataset, PlotOrientation.VERTICAL,
+                false, true, false);
+
+        /* Get instance of Plot */
+        XYPlot plot = barChart.getXYPlot();
+
+        /* Change Bar colors */
+        SBFLScoreBarRenderer barRenderer = new SBFLScoreBarRenderer(lowestScore, highestScore, scores);
+        barRenderer.setBarPainter(new StandardXYBarPainter());
+
+        /* generate tooltips */
+        final StandardXYToolTipGenerator generator = new StandardXYToolTipGenerator(
+                "{1}, score: {2}",
+                // class and line
+                new TooltipFormat(idToClassNameMap, indices),
+                // score
+                new DecimalFormat("0.00")
+        );
+        barRenderer.setSeriesToolTipGenerator(0, generator);
+
+        plot.setRenderer(barRenderer);
+
+        ChartPanel chartPanel = new ChartPanel(barChart);
+//        chartPanel.setPreferredSize(new java.awt.Dimension( 560 , 367 ) );
+        chartPanel.setPreferredSize(null);
+
+        chartPanel.addChartMouseListener(new ChartMouseListener() {
+
+            @Override
+            public void chartMouseClicked(ChartMouseEvent event) {
+                if (DumbService.isDumb(project)) {
+                    // ignore when not ready
+                    showNoIndexWarning();
+                    return;
+                }
+
+                ChartEntity entity = event.getEntity();
+//                System.out.println(entity);
+                XYItemEntity itemEntity = (XYItemEntity) entity;
+                XYDataset data = itemEntity.getDataset();
+                double x = data.getXValue(0, itemEntity.getItem());
+
+                int index = (int) x;
+                long encodedStatement = indices[index];
+                String className = ClassLineEncoding.getClassName(encodedStatement, idToClassNameMap);
+                int line = ClassLineEncoding.getLineNUmber(encodedStatement);
+
+                // jump to respective line in editor
+                EditorUtils.navigateToClass(project, className, line);
+                EditorUtils.colorLineInEditor(project, line, true);
+            }
+
+            @Override
+            public void chartMouseMoved(ChartMouseEvent event) {
+            }
+        });
+
+        tabs.addTab(TAB_TITLE_PREFIX + threadId, chartPanel);
     }
 
 }

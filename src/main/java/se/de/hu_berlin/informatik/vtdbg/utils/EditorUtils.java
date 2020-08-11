@@ -112,7 +112,7 @@ public class EditorUtils {
         colorClassInEditor(editor, currentScore, removeOldHighlighters);
     }
 
-    public static void colorClassSBFL(Project project, int line, boolean removeOldHighlighters) {
+    public static void colorLineInEditor(Project project, int line, boolean removeOldHighlighters) {
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
 
         if (editor == null) {

@@ -38,7 +38,7 @@ public class MyViewManager {
                 TOOLWINDOW_ID,
                 MyCoverageBundle.messagePointer("coverage.view.title"),
                 AllIcons.General.Modified,
-                ToolWindowAnchor.RIGHT
+                ToolWindowAnchor.BOTTOM
         );
 
         ToolWindow toolWindow = ToolWindowManager.getInstance(project)
