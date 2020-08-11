@@ -1,6 +1,7 @@
 package se.de.hu_berlin.informatik.vtdbg.coverage.view;
 
 import com.intellij.rt.coverage.traces.ClassLineEncoding;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.FieldPosition;
 import java.text.NumberFormat;
@@ -19,21 +20,16 @@ public class TooltipFormat extends NumberFormat {
 
     @Override
     public StringBuffer format(double number, StringBuffer toAppendTo, FieldPosition pos) {
-        if (number > Integer.MAX_VALUE) {
-            return toAppendTo.append("error: index too large");
-        } else if (number < 0) {
-            return toAppendTo.append("error: index too small");
-        } else if (number > indices.length) {
-            return toAppendTo.append("error: no index available");
-        } else {
-            long encodedStatement = indices[(int) number];
-            return toAppendTo.append(ClassLineEncoding.getClassName(encodedStatement, idToClassNameMap))
-                    .append(": ").append(ClassLineEncoding.getLineNUmber(encodedStatement));
-        }
+        return getStringBuffer((long) number, toAppendTo);
     }
 
     @Override
     public StringBuffer format(long number, StringBuffer toAppendTo, FieldPosition pos) {
+        return getStringBuffer(number, toAppendTo);
+    }
+
+    @NotNull
+    private StringBuffer getStringBuffer(long number, StringBuffer toAppendTo) {
         if (number > Integer.MAX_VALUE) {
             return toAppendTo.append("error: index too large");
         } else if (number < 0) {
