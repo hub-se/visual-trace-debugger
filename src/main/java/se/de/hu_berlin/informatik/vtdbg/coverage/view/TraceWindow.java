@@ -291,19 +291,21 @@ public class TraceWindow {
                 }
 
                 ChartEntity entity = event.getEntity();
+                if (entity != null) {
 //                System.out.println(entity);
-                XYItemEntity itemEntity = (XYItemEntity) entity;
-                XYDataset data = itemEntity.getDataset();
-                double x = data.getXValue(0, itemEntity.getItem());
+                    XYItemEntity itemEntity = (XYItemEntity) entity;
+                    XYDataset data = itemEntity.getDataset();
+                    double x = data.getXValue(0, itemEntity.getItem());
 
-                int index = (int) x;
-                long encodedStatement = indices[index];
-                String className = ClassLineEncoding.getClassName(encodedStatement, idToClassNameMap);
-                int line = ClassLineEncoding.getLineNUmber(encodedStatement);
+                    int index = (int) x;
+                    long encodedStatement = indices[index];
+                    String className = ClassLineEncoding.getClassName(encodedStatement, idToClassNameMap);
+                    int line = ClassLineEncoding.getLineNUmber(encodedStatement);
 
-                // jump to respective line in editor
-                EditorUtils.navigateToClass(project, className, line);
-                EditorUtils.colorLineInEditor(project, line, true);
+                    // jump to respective line in editor
+                    EditorUtils.navigateToClass(project, className, line);
+                    EditorUtils.colorLineInEditor(project, line, true);
+                }
             }
 
             @Override
