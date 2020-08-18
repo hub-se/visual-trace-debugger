@@ -7,6 +7,8 @@ group 'se.de.hu_berlin.informatik'
 version '1.0-SNAPSHOT'
 sourceCompatibility = 1.8
 
+//apply from: "$rootDir/gradle/scripts/verifier.gradle"
+
 repositories {
     mavenCentral()
     jcenter()
@@ -39,3 +41,9 @@ patchPluginXml {
 runIde {
     jvmArgs '--add-exports', 'java.base/jdk.internal.vm=ALL-UNNAMED'
 }
+
+// Compatibility checks
+//runPluginVerifier {
+//    pluginFileName = "$rootProject.name-$version"
+//    ides = ["IC-2020.1"]
+//}
