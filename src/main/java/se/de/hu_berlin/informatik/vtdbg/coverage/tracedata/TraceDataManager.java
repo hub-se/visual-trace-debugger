@@ -44,7 +44,9 @@ public class TraceDataManager {
                 sessionDataFile, ExecutionTraceCollector.TRACE_FILE_ID);
         try (FileInputStream streamIn = new FileInputStream(file)) {
             ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
+            @SuppressWarnings("unchecked")
             Map<Long, byte[]> traces = (Map<Long, byte[]>) objectinputstream.readObject();
+            @SuppressWarnings("unchecked")
             Map<Integer, String> idToClassNameMap = (Map<Integer, String>) objectinputstream.readObject();
 
             // add data to "storage"

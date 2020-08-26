@@ -37,7 +37,7 @@ public class MyViewManager {
         RegisterToolWindowTask registerToolWindowTask = RegisterToolWindowTask.closableSecondary(
                 TOOLWINDOW_ID,
                 MyCoverageBundle.messagePointer("coverage.view.title"),
-                AllIcons.General.Modified,
+                AllIcons.General.RunWithCoverage,
                 ToolWindowAnchor.BOTTOM
         );
 

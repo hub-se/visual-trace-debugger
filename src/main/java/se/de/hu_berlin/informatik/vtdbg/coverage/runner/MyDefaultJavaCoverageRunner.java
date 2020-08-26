@@ -1,24 +1,19 @@
 // Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package se.de.hu_berlin.informatik.vtdbg.coverage.runner;
 
-import com.intellij.coverage.*;
+import com.intellij.coverage.CoverageEngine;
+import com.intellij.coverage.CoverageRunner;
+import com.intellij.coverage.CoverageRunnerData;
+import com.intellij.coverage.JavaCoverageEngine;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionManager;
 import com.intellij.execution.configurations.*;
-import com.intellij.execution.configurations.coverage.CoverageEnabledConfiguration;
 import com.intellij.execution.configurations.coverage.JavaCoverageEnabledConfiguration;
 import com.intellij.execution.impl.DefaultJavaProgramRunner;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.RunConfigurationWithSuppressedDefaultRunAction;
 import com.intellij.execution.ui.RunContentDescriptor;
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
-import com.intellij.openapi.projectRoots.JavaSdk;
-import com.intellij.openapi.projectRoots.JavaSdkVersion;
-import com.intellij.openapi.projectRoots.Sdk;
 import org.jetbrains.annotations.NotNull;
-import se.de.hu_berlin.informatik.vtdbg.coverage.runner.MyCoverageExecutor;
 
 public class MyDefaultJavaCoverageRunner extends DefaultJavaProgramRunner {
   @Override

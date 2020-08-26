@@ -31,5 +31,10 @@
       <option name="name" value="maven" />
       <option name="url" value="http://titania.fs.uni-saarland.de/nexus/content/groups/public/" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="maven" />
+      <option name="name" value="maven" />
+      <option name="url" value="https://titania.fs.uni-saarland.de/nexus/content/groups/public/" />
+    </remote-repository>
   </component>
 </project>
