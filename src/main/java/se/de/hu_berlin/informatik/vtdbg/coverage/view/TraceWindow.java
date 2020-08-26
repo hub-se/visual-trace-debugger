@@ -394,6 +394,8 @@ public class TraceWindow {
         ChartPanel chartPanel = new ChartPanel(barChart);
 //        chartPanel.setPreferredSize(new java.awt.Dimension( 560 , 367 ) );
         chartPanel.setPreferredSize(null);
+        // disable y-axis zoom
+        chartPanel.setRangeZoomable(false);
 
 
 //        chartPanel.addChartMouseListener(getJumpToCodeMouseListener(indices));
@@ -487,10 +489,10 @@ public class TraceWindow {
             @Override
             public void mousePressed(MouseEvent e) {
                 if (e.isControlDown()) {
-                    panel.setRangeZoomable(false);
+                    // disable x-axis zoom
                     panel.setDomainZoomable(false);
                 } else {
-                    panel.setRangeZoomable(true);
+                    // enable x-axis zoom
                     panel.setDomainZoomable(true);
                 }
                 markerStart = getPosition(e);
