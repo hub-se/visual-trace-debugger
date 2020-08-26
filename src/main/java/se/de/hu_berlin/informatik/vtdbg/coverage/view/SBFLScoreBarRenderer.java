@@ -23,8 +23,8 @@ public class SBFLScoreBarRenderer extends XYBarRenderer {
     public Paint getItemPaint(final int row, final int column) {
         // returns color depending on score, if existing
         //enriklau: has been modified to update the colors accordingly when changing the view
-        if (column >= 0 && column < scend) {
-            return getColor(scores[scstart+column]);
+        if (column >= 0 && column < scores.length) {
+            return getColor(scores[scstart + column]);
         } else {
             return Color.BLUE;
         }
@@ -34,6 +34,11 @@ public class SBFLScoreBarRenderer extends XYBarRenderer {
     private Color getColor(float score) {
         float normalizedScore = (score - lowestScore) / range;
 
+        return getColorForNormalizedScore(normalizedScore);
+    }
+
+    // linear interpolation from red to yellow to green
+    public static Color getColorForNormalizedScore(float normalizedScore) {
         return new Color(
                 // red: change from 0 (green) to 1 (yellow) to 1 (red)
                 getInterpolatedRGBValue(normalizedScore, 0, 1, 1),
@@ -43,7 +48,7 @@ public class SBFLScoreBarRenderer extends XYBarRenderer {
                 0.0f);
     }
 
-    private float getInterpolatedRGBValue(float normalizedScore, float colorValue1, float colorValue2, float colorValue3) {
+    private static float getInterpolatedRGBValue(float normalizedScore, float colorValue1, float colorValue2, float colorValue3) {
         float colorValueResult = 0;
         if (normalizedScore < 0.5) {
             colorValueResult = colorValue1 * (0.5f - normalizedScore) * 2.0f + (colorValue2 * normalizedScore * 2.0f);

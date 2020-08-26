@@ -1,13 +1,13 @@
 package se.de.hu_berlin.informatik.vtdbg.coverage.runner;
 
-import com.intellij.coverage.CoverageBundle;
-import se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageBundle;
 import com.intellij.execution.Executor;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.util.text.TextWithMnemonic;
 import com.intellij.openapi.wm.ToolWindowId;
 import org.jetbrains.annotations.NotNull;
+import se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageBundle;
 
 import javax.swing.*;
 
@@ -37,7 +37,7 @@ public class MyCoverageExecutor extends Executor {
   @NotNull
   @Override
   public Icon getToolWindowIcon() {
-    return AllIcons.General.RunWithCoverage;
+    return AllIcons.Toolwindows.ToolWindowRun;
   }
 
   @Override
@@ -48,7 +48,7 @@ public class MyCoverageExecutor extends Executor {
 
   @Override
   public Icon getDisabledIcon() {
-    return null;
+    return IconLoader.getDisabledIcon(getIcon());
   }
 
   @Override

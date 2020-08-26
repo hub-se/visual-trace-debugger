@@ -14,25 +14,29 @@ import com.intellij.rt.coverage.traces.SequiturUtils;
 import com.intellij.util.messages.MessageBus;
 import de.unisb.cs.st.sequitur.input.InputSequence;
 import org.jetbrains.annotations.NotNull;
-import org.jfree.chart.*;
-import org.jfree.chart.entity.ChartEntity;
-import org.jfree.chart.entity.XYItemEntity;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
+import org.jfree.chart.plot.IntervalMarker;
+import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYBarPainter;
 import org.jfree.data.xy.IntervalXYDataset;
-import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import se.de.hu_berlin.informatik.vtdbg.coverage.Score;
+import org.jfree.ui.Layer;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceIterator;
 import se.de.hu_berlin.informatik.vtdbg.utils.EditorUtils;
-import se.de.hu_berlin.informatik.vtdbg.utils.VirtualHelper;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.List;
@@ -266,13 +270,14 @@ public class TraceWindow {
      *
      * @param map includes the coverage data for all the executed tests
      */
-    private void colorOpenedClass(Map<String, List<Score>> map) {
+    private void colorOpenedClass(Map<String, Map<Integer, Float>> map) {
         if (!coloring) {
             MessageBus messageBus = project.getMessageBus();
             messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
                 @Override
                 public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                    EditorUtils.colorClassSBFL(project, VirtualHelper.getShortPath(project, file), map, false);
+                    // VirtualHelper.getShortPath(project, file)
+                    EditorUtils.colorAllClassesSBFL(project, map, false);
                 }
             });
         }
@@ -324,6 +329,8 @@ public class TraceWindow {
 
                 series = new XYSeries("lines");
 
+                Map<Long, Float> scoreMap = new HashMap<>();
+
                 ListIterator<Long> iterator = getIndexedTraceIterator(sequence, false);
                 counter = 0;
                 while (iterator.hasNext()) {
@@ -331,7 +338,8 @@ public class TraceWindow {
                     indices[counter] = next;
 
                     // get random score (for testing)
-                    float value = dice.nextFloat();
+                    float value = scoreMap.computeIfAbsent(next, k -> dice.nextFloat());
+
                     highestScore = Math.max(highestScore, value);
                     lowestScore = Math.min(lowestScore, value);
                     scores[counter] = value;
@@ -387,40 +395,106 @@ public class TraceWindow {
 //        chartPanel.setPreferredSize(new java.awt.Dimension( 560 , 367 ) );
         chartPanel.setPreferredSize(null);
 
-        chartPanel.addChartMouseListener(new ChartMouseListener() {
 
-            @Override
-            public void chartMouseClicked(ChartMouseEvent event) {
+//        chartPanel.addChartMouseListener(getJumpToCodeMouseListener(indices));
+        chartPanel.addMouseListener(getCodeMarkerMouseListener(chartPanel, indices, scores));
+
+        tabs.addTab(TAB_TITLE_PREFIX + threadId, chartPanel);
+    }
+
+    @NotNull
+    private MouseAdapter getCodeMarkerMouseListener(ChartPanel panel, long[] indices, float[] scores) {
+        return new MouseAdapter() {
+            private Marker marker;
+            private Double markerStart = Double.NaN;
+            private Double markerEnd = Double.NaN;
+            private final JFreeChart chart = panel.getChart();
+            private final XYPlot plot = (XYPlot) chart.getPlot();
+
+            private void updateMarker() {
                 if (DumbService.isDumb(project)) {
                     // ignore when not ready
                     showNoIndexWarning();
                     return;
                 }
 
-                ChartEntity entity = event.getEntity();
-                if (entity != null) {
-//                System.out.println(entity);
-                    XYItemEntity itemEntity = (XYItemEntity) entity;
-                    XYDataset data = itemEntity.getDataset();
-                    double x = data.getXValue(0, itemEntity.getItem());
+                if (marker != null) {
+                    plot.removeDomainMarker(marker, Layer.BACKGROUND);
+                }
+                if (!(markerStart.isNaN() || markerEnd.isNaN())) {
+                    if (markerEnd < markerStart) {
+                        double temp = markerEnd;
+                        markerEnd = markerStart;
+                        markerStart = temp;
+                    }
+//                if (markerEnd > markerStart) {
+                    marker = new IntervalMarker(markerStart, markerEnd);
+                    marker.setPaint(new Color(0xDD, 0xFF, 0xDD, 0x80));
+                    marker.setAlpha(0.5f);
+                    plot.addDomainMarker(marker, Layer.BACKGROUND);
+//                }
 
-                    int index = (int) x;
-                    long encodedStatement = indices[index];
-                    String className = ClassLineEncoding.getClassName(encodedStatement, idToClassNameMap);
-                    int line = ClassLineEncoding.getLineNUmber(encodedStatement);
+                    // maps class names to map of line numbers to respective line scores
+                    Map<String, Map<Integer, Float>> scoreMap = new HashMap<>();
 
-                    // jump to respective line in editor
-                    EditorUtils.navigateToClass(project, className, line);
-                    EditorUtils.colorLineInEditor(project, line, true);
+                    int startIndex = markerStart.intValue();
+                    int endIndex = markerEnd.intValue();
+                    for (int i = startIndex; i <= endIndex; ++i) {
+                        if (i < 0 || i >= indices.length) {
+                            continue;
+                        }
+                        long encodedStatement = indices[i];
+                        String className = ClassLineEncoding.getClassName(encodedStatement, idToClassNameMap);
+                        int line = ClassLineEncoding.getLineNUmber(encodedStatement);
+
+                        scoreMap.computeIfAbsent(className, k -> new HashMap<>())
+                                .put(line, scores[i]);
+                    }
+
+                    // color selected lines based on scores in editor
+                    EditorUtils.colorAllClassesSBFL(project, scoreMap, true);
+
+                    // jump to first selected line in editor, if there is a valid one
+                    for (int i = startIndex; i <= endIndex; ++i) {
+                        if (i < 0 || i >= indices.length) {
+                            continue;
+                        }
+                        long encodedStatement = indices[i];
+                        String className = ClassLineEncoding.getClassName(encodedStatement, idToClassNameMap);
+                        int line = ClassLineEncoding.getLineNUmber(encodedStatement);
+
+                        EditorUtils.navigateToClass(project, className, line);
+                        break;
+                    }
+                }
+            }
+
+            private Double getPosition(MouseEvent e) {
+                Point2D p = panel.translateScreenToJava2D(e.getPoint());
+                Rectangle2D plotArea = panel.getScreenDataArea();
+                XYPlot plot = (XYPlot) chart.getPlot();
+                return plot.getDomainAxis().java2DToValue(p.getX(), plotArea, plot.getDomainAxisEdge());
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                markerEnd = getPosition(e);
+                if (e.isControlDown()) {
+                    updateMarker();
                 }
             }
 
             @Override
-            public void chartMouseMoved(ChartMouseEvent event) {
+            public void mousePressed(MouseEvent e) {
+                if (e.isControlDown()) {
+                    panel.setRangeZoomable(false);
+                    panel.setDomainZoomable(false);
+                } else {
+                    panel.setRangeZoomable(true);
+                    panel.setDomainZoomable(true);
+                }
+                markerStart = getPosition(e);
             }
-        });
-
-        tabs.addTab(TAB_TITLE_PREFIX + threadId, chartPanel);
+        };
     }
-
 }

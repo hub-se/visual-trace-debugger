@@ -43,7 +43,8 @@
         <projectService serviceImplementation="se.de.hu_berlin.informatik.vtdbg.coverage.view.MyViewManager"/>
         <coverageRunner implementation="se.de.hu_berlin.informatik.vtdbg.coverage.runner.IDEATraceCoverageRunner"/>
         <programRunner implementation="se.de.hu_berlin.informatik.vtdbg.coverage.runner.MyDefaultJavaCoverageRunner"/>
-        <executor implementation="se.de.hu_berlin.informatik.vtdbg.coverage.runner.MyCoverageExecutor" />
+        <executor implementation="se.de.hu_berlin.informatik.vtdbg.coverage.runner.MyCoverageExecutor" order="last"
+                  id="traceCoverage"/>
         <!--<testActionProvider implementation="se.de.hu_berlin.informatik.vtdbg.coverage.MyTrackCoverageActionProvider"/>-->
     </extensions>
 
