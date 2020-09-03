@@ -22,8 +22,8 @@ dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.12'
     implementation fileTree(dir: 'src/main/lib', include: ['*.jar'])
     implementation "de.unisb.cs.st:sequitur:1.0"
-    // https://mvnrepository.com/artifact/jfree/jfreechart
-    implementation group: 'jfree', name: 'jfreechart', version: '1.0.12'
+    // https://mvnrepository.com/artifact/org.jfree/jfreechart
+    compile group: 'org.jfree', name: 'jfreechart', version: '1.0.19'
     //implementation files("${System.getProperty('java.home')}/../lib/tools.jar")
 }
 

@@ -27,11 +27,14 @@ import org.jfree.data.xy.IntervalXYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.Layer;
+import se.de.hu_berlin.informatik.vtdbg.coverage.ChunkTrunk;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceDataManager;
 import se.de.hu_berlin.informatik.vtdbg.coverage.tracedata.TraceIterator;
 import se.de.hu_berlin.informatik.vtdbg.utils.EditorUtils;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -55,29 +58,14 @@ public class TraceWindow {
 
     public static final String TAB_TITLE_PREFIX = "Thread ";
     private JPanel content;
-    private JTabbedPane tabs;
-    private JFreeChart barChart;
-    private XYPlot plot;
-    XYSeriesCollection dataset;
-    XYSeries series;
-    SBFLScoreBarRenderer barRenderer;
-    XYSeries tmpseries;
+    public JTabbedPane tabs;
+    ChunkTrunk trunk;
+
     private JButton buttonLeft;
     private JButton buttonRight;
-    private JButton zOutButton;
-    private JButton zInButton;
-    private JButton rnavButton;
-    private JButton lnavButton;
-    private Color category_1;   //for coloring purposes
-    private Color category_2;   //for coloring purposes
-    private Color category_3;   //for coloring purposes
-    private int category_count; //for coloring purposes
-    private Color category_temp;//for coloring purposes
-    private int navstart;
-    private int navend;
-    private int navmid;
-    private int counter;
-    private int navrange;
+    private JLabel chunkLabel;
+    private JButton chunkPrev;
+    private JButton chunkNext;
 
     List<? extends SMTestProxy> testResults;
 
@@ -98,12 +86,9 @@ public class TraceWindow {
 
         registerNextButton();
         registerPreviousButton();
-        registerzInButton();
-        registerzOutButton();
-        registerlnavButton();
-        registerrnavButton();
+        registerChunkNext();
+        registerChunkPrev();
     }
-
     /**
      * @return everything (that is visible) from the TraceWindow
      */
@@ -111,82 +96,16 @@ public class TraceWindow {
         return content;
     }
 
-    //update the bar chart after pressing a navigational button
-    private void updateXY(){
-        try {
-            tmpseries = series.createCopy(navstart,navend);
-        } catch (CloneNotSupportedException cnsex) {tmpseries = series;}
-        dataset.removeAllSeries();
-        dataset.addSeries(tmpseries);
-        plot.setDataset(dataset);
-        barRenderer.scstart = navstart;
-        barRenderer.scend = navend;
+    private void registerChunkPrev() {
+        chunkPrev.addActionListener(e -> {
+            trunk.previousChunk(tabs, chunkLabel);
+        });
     }
 
-    //button for zooming in
-    private void registerzInButton() {
-        zInButton.addActionListener(e -> {
-                navrange = navrange / 2;
-                navstart = navmid - navrange;
-                navend = navmid + navrange;
-                updateXY();
-            }
-            );
-    }
-
-    //button for zooming out
-    private void registerzOutButton() {
-        zOutButton.addActionListener(e -> {
-            navrange = navrange * 2;
-            if (navrange * 2 > counter) {
-                navstart = 0; navend = counter;
-                navmid = counter / 2;
-                navrange = counter / 2;
-            }
-            else
-            {
-                if (navmid + navrange > counter)
-                {navmid = counter - navrange;}
-                if (navmid - navrange < 0)
-                {navmid = navrange;}
-                navstart = navmid - navrange;
-                navend = navmid + navrange;
-            }
-            updateXY();
-                }
-        );
-    }
-
-    //button for navigating to the left
-    private void registerlnavButton() {
-        lnavButton.addActionListener(e -> {
-            if (navmid-(navrange*1.25) < 0) {
-                    navmid = 0 + navrange;
-                }
-            else {
-                    navmid -= (navrange * 0.25);
-                }
-            navstart = navmid - navrange;
-            navend = navmid + navrange;
-            updateXY();
-            }
-        );
-    }
-
-    //button for navigating to the right
-    private void registerrnavButton() {
-        rnavButton.addActionListener(e -> {
-            if (navmid+(navrange*1.25) > counter) {
-                    navmid = counter - navrange;
-                }
-            else {
-                    navmid += (navrange * 0.25);
-                }
-            navstart = navmid - navrange;
-            navend = navmid + navrange;
-            updateXY();
-            }
-        );
+    private void registerChunkNext() {
+        chunkNext.addActionListener(e -> {
+            trunk.nextChunk(tabs, chunkLabel);
+        });
     }
 
     private void registerNextButton() {
@@ -310,8 +229,10 @@ public class TraceWindow {
     }
 
     private void fillForm() {
+        int tabNo = 0;
         if (sequences != null) {
             for (Map.Entry<Long, InputSequence<Long>> sequence : sequences.entrySet()) {
+                tabNo++;
                 long tlength = sequence.getValue().getLength();
                 if (tlength > Integer.MAX_VALUE) {
                     throw new IllegalStateException("trace too long!");
@@ -327,12 +248,13 @@ public class TraceWindow {
 
                 Random dice = new Random();
 
-                series = new XYSeries("lines");
+                XYSeries series = new XYSeries("lines");
 
                 Map<Long, Float> scoreMap = new HashMap<>();
 
                 ListIterator<Long> iterator = getIndexedTraceIterator(sequence, false);
-                counter = 0;
+                int counter = 0;
+                XYSeriesCollection dataset = new XYSeriesCollection();
                 while (iterator.hasNext()) {
                     long next = iterator.next();
                     indices[counter] = next;
@@ -348,35 +270,33 @@ public class TraceWindow {
 
                     ++counter;
                 }
-                counter -= 1;
-                navstart = 0;
-                navend = counter;
-                navrange = counter / 2;
-                navmid = (navstart + navend) / 2;
-                dataset = new XYSeriesCollection();
                 dataset.addSeries(series);
-                /* use with buttons to navigate the chart
-
-                 */
-
                 createBarChart(sequence.getKey(), dataset, indices, lowestScore, highestScore, scores);
             }
+            //splitting the datasets of the newly created tabs into chunks to increase overall performance
+            trunk = new ChunkTrunk(tabs, tabNo, chunkLabel);
+            tabs.addChangeListener(new ChangeListener(){
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    int i = tabs.getSelectedIndex();
+                    trunk.updateLabel(tabs, i, chunkLabel);
+                }
+            });
         }
     }
 
     private void createBarChart(long threadId, IntervalXYDataset dataset, long[] indices,
                                 float lowestScore, float highestScore, float[] scores) {
-        barChart = ChartFactory.createXYBarChart(null, "Line",
+        JFreeChart barChart = ChartFactory.createXYBarChart(null, "Line",
                 false, "Score", dataset, PlotOrientation.VERTICAL,
                 false, true, false);
 
         /* Get instance of Plot */
-        plot = barChart.getXYPlot();
+        XYPlot plot = barChart.getXYPlot();
+        plot.setDomainPannable(true);
 
         /* Change Bar colors */
-        barRenderer = new SBFLScoreBarRenderer(lowestScore, highestScore, scores);
-        barRenderer.scstart = 0;
-        barRenderer.scend = counter;
+        SBFLScoreBarRenderer barRenderer = new SBFLScoreBarRenderer(lowestScore, highestScore, scores);
         barRenderer.setBarPainter(new StandardXYBarPainter());
 
         /* generate tooltips */
@@ -392,6 +312,8 @@ public class TraceWindow {
         plot.setRenderer(barRenderer);
 
         ChartPanel chartPanel = new ChartPanel(barChart);
+        chartPanel.setDomainZoomable(true);
+        chartPanel.setMouseWheelEnabled(true);
 //        chartPanel.setPreferredSize(new java.awt.Dimension( 560 , 367 ) );
         chartPanel.setPreferredSize(null);
         // disable y-axis zoom
@@ -439,6 +361,8 @@ public class TraceWindow {
                     // maps class names to map of line numbers to respective line scores
                     Map<String, Map<Integer, Float>> scoreMap = new HashMap<>();
 
+                    markerStart+=0.5;
+                    markerEnd+=0.5;
                     int startIndex = markerStart.intValue();
                     int endIndex = markerEnd.intValue();
                     for (int i = startIndex; i <= endIndex; ++i) {
@@ -481,20 +405,16 @@ public class TraceWindow {
             @Override
             public void mouseReleased(MouseEvent e) {
                 markerEnd = getPosition(e);
-                if (e.isControlDown()) {
+                if (e.isAltDown()) {
                     updateMarker();
                 }
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                if (e.isControlDown()) {
-                    // disable x-axis zoom
-                    panel.setDomainZoomable(false);
-                } else {
-                    // enable x-axis zoom
-                    panel.setDomainZoomable(true);
-                }
+                // disable x-axis zoom
+                // enable x-axis zoom
+                panel.setDomainZoomable(!e.isAltDown());
                 markerStart = getPosition(e);
             }
         };

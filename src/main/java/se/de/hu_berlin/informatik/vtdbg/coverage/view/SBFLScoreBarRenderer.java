@@ -1,6 +1,7 @@
 package se.de.hu_berlin.informatik.vtdbg.coverage.view;
 
 import org.jfree.chart.renderer.xy.XYBarRenderer;
+import org.jfree.data.xy.XYDataset;
 
 import java.awt.*;
 
@@ -9,9 +10,7 @@ public class SBFLScoreBarRenderer extends XYBarRenderer {
     private final float range;
     private float lowestScore;
     private float highestScore;
-    private float[] scores;
-    public int scstart;
-    public int scend;
+    public float[] scores;
 
     public SBFLScoreBarRenderer(float lowestScore, float highestScore, float[] scores) {
         this.lowestScore = lowestScore;
@@ -20,11 +19,20 @@ public class SBFLScoreBarRenderer extends XYBarRenderer {
         this.range = highestScore - lowestScore;
     }
 
+    /*public SBFLScoreBarRenderer(float lowestScore, float highestScore, XYDataset dataset){
+        this.range = highestScore - lowestScore;
+        this.lowestScore = lowestScore;
+        this.highestScore = highestScore;
+        scores = new float[dataset.getItemCount(0)];
+        for (int i = 0; i < dataset.getItemCount(0); i++){
+            scores[i] = (float) dataset.getYValue(0,i);
+        }
+    }*/
+
     public Paint getItemPaint(final int row, final int column) {
         // returns color depending on score, if existing
-        //enriklau: has been modified to update the colors accordingly when changing the view
         if (column >= 0 && column < scores.length) {
-            return getColor(scores[scstart + column]);
+            return getColor(scores[column]);
         } else {
             return Color.BLUE;
         }
