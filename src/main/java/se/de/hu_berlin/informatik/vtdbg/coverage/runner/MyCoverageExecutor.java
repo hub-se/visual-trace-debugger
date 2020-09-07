@@ -12,7 +12,6 @@ import se.de.hu_berlin.informatik.vtdbg.coverage.MyCoverageBundle;
 import javax.swing.*;
 
 public class MyCoverageExecutor extends Executor {
-
   public static final String EXECUTOR_ID = "MyCoverage";
 
   @Override
